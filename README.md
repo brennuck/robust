@@ -1,10 +1,11 @@
-# 🚀 Robust - React Native Starter
+# 🚀 React Native Starter
 
 A production-ready React Native starter template with a full-stack setup. Clone, configure, and start building immediately.
 
 ## ✨ Features
 
 ### Frontend (React Native + Expo)
+
 - **[Expo Router](https://expo.github.io/router/)** - File-based routing with TypeScript support
 - **[Clerk](https://clerk.com/)** - Complete authentication (sign up, sign in, session management)
 - **[TanStack Query](https://tanstack.com/query)** - Powerful data fetching, caching, and synchronization
@@ -13,6 +14,7 @@ A production-ready React Native starter template with a full-stack setup. Clone,
 - **[Expo Secure Store](https://docs.expo.dev/versions/latest/sdk/securestore/)** - Secure token storage
 
 ### Backend (Express + Prisma)
+
 - **[Express](https://expressjs.com/)** - Fast, minimal Node.js web framework
 - **[Prisma](https://www.prisma.io/)** - Type-safe ORM with migrations
 - **[PostgreSQL](https://www.postgresql.org/)** - Robust relational database
@@ -256,6 +258,7 @@ npm run db:seed      # Run seed script
 ### Environment Variables for Production
 
 **Backend:**
+
 ```
 DATABASE_URL=your-neon-production-url
 CLERK_SECRET_KEY=sk_live_xxxxx
@@ -264,6 +267,7 @@ FRONTEND_URL=https://your-app-url
 ```
 
 **Mobile (via app.json or EAS):**
+
 ```
 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_xxxxx
 EXPO_PUBLIC_API_URL=https://your-api-url/api
@@ -285,15 +289,15 @@ All protected routes require a valid Clerk session token in the `Authorization` 
 
 ### Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/api/public` | Public endpoint |
-| POST | `/api/auth/sync` | Sync user to database |
-| GET | `/api/user/me` | Get current user |
-| PATCH | `/api/user/me` | Update user profile |
-| DELETE | `/api/user/me` | Delete account |
-| POST | `/api/push/register` | Register push token |
+| Method | Endpoint               | Description           |
+| ------ | ---------------------- | --------------------- |
+| GET    | `/health`              | Health check          |
+| GET    | `/api/public`          | Public endpoint       |
+| POST   | `/api/auth/sync`       | Sync user to database |
+| GET    | `/api/user/me`         | Get current user      |
+| PATCH  | `/api/user/me`         | Update user profile   |
+| DELETE | `/api/user/me`         | Delete account        |
+| POST   | `/api/push/register`   | Register push token   |
 | DELETE | `/api/push/unregister` | Unregister push token |
 
 ## 🧩 Customization
@@ -356,6 +360,7 @@ Update colors in the StyleSheet of each component. The starter uses a dark theme
 ### "Missing CLERK_PUBLISHABLE_KEY"
 
 Make sure `.env` file exists with your Clerk key:
+
 ```
 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
 ```
@@ -388,4 +393,3 @@ MIT © Your Name
 **Happy coding! 🎉**
 
 Built with ❤️ using Expo, Express, Prisma, and Clerk.
-
