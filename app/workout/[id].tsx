@@ -10,6 +10,7 @@ import {
   Vibration,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -40,7 +41,7 @@ function SetRow({
   const { theme } = useTheme();
   const updateSet = useUpdateSet();
   const deleteSet = useDeleteSet();
-  
+
   const [weight, setWeight] = useState(set.weight?.toString() || '');
   const [reps, setReps] = useState(set.reps?.toString() || '');
 
@@ -94,15 +95,13 @@ function SetRow({
   };
 
   return (
-    <View style={[
-      styles.setRow, 
-      set.completed && { backgroundColor: `${theme.primary}10` }
-    ]}>
+    <View style={[styles.setRow, set.completed && { backgroundColor: `${theme.primary}10` }]}>
       <View style={styles.setNumber}>
-        <Text style={[
-          styles.setNumberText, 
-          { color: set.isWarmup ? colors.gold : theme.textSecondary }
-        ]}>
+        <Text
+          style={[
+            styles.setNumberText,
+            { color: set.isWarmup ? colors.gold : theme.textSecondary },
+          ]}>
           {set.isWarmup ? 'W' : index + 1}
         </Text>
       </View>
@@ -113,12 +112,12 @@ function SetRow({
 
       <TextInput
         style={[
-          styles.setInput, 
-          { 
+          styles.setInput,
+          {
             backgroundColor: set.completed ? 'transparent' : theme.inputBackground,
             color: set.completed ? theme.primary : theme.inputText,
             borderColor: theme.inputBorder,
-          }
+          },
         ]}
         placeholder="0"
         placeholderTextColor={theme.inputPlaceholder}
@@ -130,12 +129,12 @@ function SetRow({
 
       <TextInput
         style={[
-          styles.setInput, 
-          { 
+          styles.setInput,
+          {
             backgroundColor: set.completed ? 'transparent' : theme.inputBackground,
             color: set.completed ? theme.primary : theme.inputText,
             borderColor: theme.inputBorder,
-          }
+          },
         ]}
         placeholder="0"
         placeholderTextColor={theme.inputPlaceholder}
@@ -147,11 +146,10 @@ function SetRow({
 
       <TouchableOpacity
         style={[
-          styles.checkButton, 
-          { backgroundColor: set.completed ? theme.primary : theme.backgroundSecondary }
+          styles.checkButton,
+          { backgroundColor: set.completed ? theme.primary : theme.backgroundSecondary },
         ]}
-        onPress={handleComplete}
-      >
+        onPress={handleComplete}>
         <Ionicons
           name={set.completed ? 'checkmark' : 'checkmark-outline'}
           size={20}
@@ -196,7 +194,8 @@ function ExerciseCard({
   };
 
   return (
-    <View style={[styles.exerciseCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+    <View
+      style={[styles.exerciseCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
       <View style={styles.exerciseHeader}>
         <Text style={[styles.exerciseName, { color: theme.primary }]}>
           {exercise.exercise.name}
@@ -215,19 +214,12 @@ function ExerciseCard({
       </View>
 
       {exercise.sets.map((set, index) => (
-        <SetRow
-          key={set.id}
-          set={set}
-          index={index}
-          workoutId={workoutId}
-          onUpdate={onUpdate}
-        />
+        <SetRow key={set.id} set={set} index={index} workoutId={workoutId} onUpdate={onUpdate} />
       ))}
 
-      <TouchableOpacity 
-        style={[styles.addSetButton, { borderColor: theme.border }]} 
-        onPress={handleAddSet}
-      >
+      <TouchableOpacity
+        style={[styles.addSetButton, { borderColor: theme.border }]}
+        onPress={handleAddSet}>
         <Ionicons name="add" size={18} color={theme.primary} />
         <Text style={[styles.addSetText, { color: theme.primary }]}>Add Set</Text>
       </TouchableOpacity>
@@ -239,18 +231,19 @@ export default function ActiveWorkout() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { data, refetch } = useWorkout(id);
   const completeWorkout = useCompleteWorkout();
 
   const [elapsedTime, setElapsedTime] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const workout = data?.workout;
 
   useEffect(() => {
     if (workout?.startedAt && !workout.completedAt) {
       const start = new Date(workout.startedAt).getTime();
-      
+
       intervalRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - start) / 1000));
       }, 1000);
@@ -305,22 +298,31 @@ export default function ActiveWorkout() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.backgroundSecondary, borderBottomColor: theme.border }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: theme.backgroundSecondary,
+            borderBottomColor: theme.border,
+            paddingTop: insets.top + spacing.base,
+          },
+        ]}>
         <TouchableOpacity onPress={handleDiscard}>
           <Ionicons name="close" size={28} color={theme.error} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerCenter}>
           <Text style={[styles.workoutName, { color: theme.text }]}>{workout.name}</Text>
-          <Text style={[styles.timer, { color: theme.primary }]}>{formatDuration(elapsedTime)}</Text>
+          <Text style={[styles.timer, { color: theme.primary }]}>
+            {formatDuration(elapsedTime)}
+          </Text>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.finishButton, { backgroundColor: theme.primary }]} 
-          onPress={handleFinish}
-        >
+        <TouchableOpacity
+          style={[styles.finishButton, { backgroundColor: theme.primary }]}
+          onPress={handleFinish}>
           <Text style={[styles.finishText, { color: theme.textInverse }]}>Finish</Text>
         </TouchableOpacity>
       </View>
@@ -336,9 +338,11 @@ export default function ActiveWorkout() {
         ))}
 
         <TouchableOpacity
-          style={[styles.addExerciseButton, { backgroundColor: theme.card, borderColor: theme.border }]}
-          onPress={() => router.push(`/workout/${id}/add-exercise`)}
-        >
+          style={[
+            styles.addExerciseButton,
+            { backgroundColor: theme.card, borderColor: theme.border },
+          ]}
+          onPress={() => router.push(`/workout/${id}/add-exercise`)}>
           <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
           <Text style={[styles.addExerciseText, { color: theme.primary }]}>Add Exercise</Text>
         </TouchableOpacity>
@@ -363,7 +367,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
-    paddingTop: 60,
     paddingBottom: spacing.base,
     borderBottomWidth: 1,
   },

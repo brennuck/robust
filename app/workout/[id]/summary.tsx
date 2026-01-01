@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkout, formatDuration, calculateWorkoutStats } from '@/hooks/useWorkouts';
@@ -16,6 +17,7 @@ export default function WorkoutSummary() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { data } = useWorkout(id);
 
   const workout = data?.workout;
@@ -38,7 +40,7 @@ export default function WorkoutSummary() {
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.base }]}>
         <TouchableOpacity onPress={() => router.replace('/(app)')}>
           <Ionicons name="close" size={28} color={theme.text} />
         </TouchableOpacity>
@@ -173,7 +175,7 @@ export default function WorkoutSummary() {
       </ScrollView>
 
       {/* Done Button */}
-      <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
+      <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border, paddingBottom: insets.bottom + spacing.base }]}>
         <TouchableOpacity
           style={[styles.doneButton, { backgroundColor: theme.primary }]}
           onPress={() => router.replace('/(app)')}
@@ -198,7 +200,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
-    paddingTop: 60,
     paddingBottom: spacing.base,
   },
   headerTitle: {
@@ -354,7 +355,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: spacing.base,
-    paddingBottom: spacing['2xl'],
     borderTopWidth: 1,
   },
   doneButton: {

@@ -88,6 +88,7 @@ export default function AddExercise() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
+          headerShown: true,
           title: 'Add Exercise',
           headerStyle: { backgroundColor: theme.background },
           headerTintColor: theme.text,

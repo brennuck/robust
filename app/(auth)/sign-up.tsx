@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { useSignUp } from '@clerk/clerk-expo';
 import { useSyncUser } from '@/hooks/useUser';
@@ -22,6 +23,7 @@ export default function SignUp() {
   const router = useRouter();
   const syncUser = useSyncUser();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -86,7 +88,7 @@ export default function SignUp() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={[styles.container, { backgroundColor: theme.background }]}
       >
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingTop: insets.top + spacing.base }]}>
           <TouchableOpacity 
             style={styles.backButton} 
             onPress={() => setPendingVerification(false)}
@@ -167,7 +169,7 @@ export default function SignUp() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingTop: insets.top + spacing.base }]}>
           <TouchableOpacity 
             style={styles.backButton} 
             onPress={() => router.back()}
@@ -308,15 +310,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing['2xl'],
-    paddingTop: 100,
     paddingBottom: spacing['3xl'],
     justifyContent: 'center',
   },
   backButton: {
-    position: 'absolute',
-    top: 60,
-    left: spacing['2xl'],
-    zIndex: 1,
+    marginBottom: spacing.lg,
   },
   iconContainer: {
     width: 64,

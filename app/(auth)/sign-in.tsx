@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Link, useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useTheme } from '@/providers';
@@ -19,6 +20,7 @@ export default function SignIn() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,7 +59,7 @@ export default function SignIn() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.background }]}
     >
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingTop: insets.top + spacing.base }]}>
         {/* Back Button */}
         <TouchableOpacity 
           style={styles.backButton} 
@@ -175,14 +177,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing['2xl'],
-    paddingTop: 60,
     justifyContent: 'center',
   },
   backButton: {
-    position: 'absolute',
-    top: 60,
-    left: spacing['2xl'],
-    zIndex: 1,
+    marginBottom: spacing.lg,
   },
   header: {
     marginBottom: spacing['3xl'],

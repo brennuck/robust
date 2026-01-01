@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuth } from '@clerk/clerk-expo';
 import { Providers, useTheme } from '@/providers';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -46,9 +47,27 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
         <Stack.Screen name="workout/[id]" options={{ presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="workout/[id]/add-exercise" />
+        <Stack.Screen 
+          name="workout/[id]/add-exercise" 
+          options={{ 
+            headerShown: true,
+            headerStyle: { backgroundColor: theme.background },
+            headerTintColor: theme.text,
+            headerShadowVisible: false,
+            title: 'Add Exercise',
+          }} 
+        />
         <Stack.Screen name="workout/[id]/summary" options={{ presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="templates/new" />
+        <Stack.Screen 
+          name="templates/new" 
+          options={{ 
+            headerShown: true,
+            headerStyle: { backgroundColor: theme.background },
+            headerTintColor: theme.text,
+            headerShadowVisible: false,
+            title: 'New Routine',
+          }} 
+        />
       </Stack>
     </>
   );
@@ -56,8 +75,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <Providers>
-      <RootLayoutNav />
-    </Providers>
+    <SafeAreaProvider>
+      <Providers>
+        <RootLayoutNav />
+      </Providers>
+    </SafeAreaProvider>
   );
 }

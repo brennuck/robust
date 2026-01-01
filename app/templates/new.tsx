@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCreateTemplate } from '@/hooks/useTemplates';
@@ -29,6 +30,7 @@ interface TemplateExercise {
 export default function NewTemplate() {
   const router = useRouter();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const createTemplate = useCreateTemplate();
   const { data: exercisesData } = useExercises();
 
@@ -90,6 +92,7 @@ export default function NewTemplate() {
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Stack.Screen
           options={{
+            headerShown: true,
             title: 'Add Exercise',
             headerStyle: { backgroundColor: theme.background },
             headerTintColor: theme.text,
@@ -154,17 +157,11 @@ export default function NewTemplate() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
+          headerShown: true,
           title: 'New Routine',
           headerStyle: { backgroundColor: theme.background },
           headerTintColor: theme.text,
           headerShadowVisible: false,
-          headerRight: () => (
-            <TouchableOpacity onPress={handleSave} disabled={createTemplate.isPending}>
-              <Text style={[styles.saveButton, { color: theme.primary }]}>
-                {createTemplate.isPending ? 'Saving...' : 'Save'}
-              </Text>
-            </TouchableOpacity>
-          ),
         }}
       />
 
@@ -261,6 +258,29 @@ export default function NewTemplate() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Footer Actions */}
+      <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border, paddingBottom: insets.bottom + spacing.base }]}>
+        <TouchableOpacity
+          style={[styles.cancelButton, { backgroundColor: theme.backgroundSecondary }]}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.saveButtonFooter, 
+            { backgroundColor: theme.primary },
+            createTemplate.isPending && styles.buttonDisabled,
+          ]}
+          onPress={handleSave}
+          disabled={createTemplate.isPending}
+        >
+          <Text style={[styles.saveButtonFooterText, { color: theme.textInverse }]}>
+            {createTemplate.isPending ? 'Saving...' : 'Save Routine'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -271,7 +291,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.base,
-    paddingBottom: spacing['2xl'],
+    paddingBottom: spacing.base,
   },
   section: {
     marginBottom: spacing.xl,
@@ -362,10 +382,6 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.base,
     fontWeight: '600',
   },
-  saveButton: {
-    fontSize: typography.sizes.base,
-    fontWeight: '600',
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -404,5 +420,34 @@ const styles = StyleSheet.create({
   exerciseMeta: {
     fontSize: typography.sizes.sm,
     textTransform: 'capitalize',
+  },
+  footer: {
+    flexDirection: 'row',
+    padding: spacing.base,
+    gap: spacing.md,
+    borderTopWidth: 1,
+  },
+  cancelButton: {
+    flex: 1,
+    borderRadius: radius.md,
+    paddingVertical: spacing.base,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: typography.sizes.base,
+    fontWeight: '600',
+  },
+  saveButtonFooter: {
+    flex: 2,
+    borderRadius: radius.md,
+    paddingVertical: spacing.base,
+    alignItems: 'center',
+  },
+  saveButtonFooterText: {
+    fontSize: typography.sizes.base,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
 });

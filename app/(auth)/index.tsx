@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/providers';
 import { typography, spacing, radius } from '@/lib/theme';
@@ -6,6 +7,7 @@ import { typography, spacing, radius } from '@/lib/theme';
 export default function Welcome() {
   const router = useRouter();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -13,7 +15,7 @@ export default function Welcome() {
       <View style={styles.decorativeOrb1} />
       <View style={styles.decorativeOrb2} />
       
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
         {/* Logo / Brand */}
         <View style={styles.brandSection}>
           <View style={[styles.logoContainer, { backgroundColor: theme.primary }]}>
@@ -121,8 +123,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing['2xl'],
-    paddingTop: 100,
-    paddingBottom: spacing['3xl'],
     justifyContent: 'space-between',
   },
   brandSection: {
