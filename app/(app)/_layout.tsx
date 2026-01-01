@@ -7,14 +7,15 @@ export default function AppLayout() {
 
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
-        headerStyle: { 
+        headerStyle: {
           backgroundColor: theme.background,
           shadowColor: 'transparent',
           elevation: 0,
         },
         headerTintColor: theme.text,
-        headerTitleStyle: { 
+        headerTitleStyle: {
           fontWeight: '600',
           fontSize: 17,
         },
@@ -31,33 +32,26 @@ export default function AppLayout() {
           fontSize: 11,
           fontWeight: '500',
         },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Workouts',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="fitness-outline" size={24} color={color} />
-          ),
-        }}
-      />
+      }}>
       <Tabs.Screen
         name="history"
         options={{
           title: 'History',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={24} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Ionicons name="calendar-outline" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Workout',
+          tabBarIcon: ({ color }) => <Ionicons name="fitness-outline" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={24} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Ionicons name="person-outline" size={24} color={color} />,
         }}
       />
     </Tabs>
