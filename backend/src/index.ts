@@ -5,6 +5,9 @@ import { clerkMiddleware, requireAuth, getAuth } from '@clerk/express';
 import { prisma } from './lib/prisma.js';
 import { userRouter } from './routes/user.js';
 import { pushRouter } from './routes/push.js';
+import { workoutsRouter } from './routes/workouts.js';
+import { exercisesRouter } from './routes/exercises.js';
+import { templatesRouter } from './routes/templates.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -30,6 +33,9 @@ app.get('/api/public', (_req, res) => {
 // Protected routes
 app.use('/api/user', requireAuth(), userRouter);
 app.use('/api/push', requireAuth(), pushRouter);
+app.use('/api/workouts', requireAuth(), workoutsRouter);
+app.use('/api/exercises', requireAuth(), exercisesRouter);
+app.use('/api/templates', requireAuth(), templatesRouter);
 
 // Sync user from Clerk to database
 app.post('/api/auth/sync', requireAuth(), async (req, res) => {
@@ -75,4 +81,3 @@ process.on('SIGTERM', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
-

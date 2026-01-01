@@ -4,12 +4,14 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '@clerk/clerk-expo';
 import { Providers } from '@/providers';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useSyncUser } from '@/hooks/useUser';
 
 function RootLayoutNav() {
   const { isLoaded, isSignedIn } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const { registerPushNotifications } = usePushNotifications();
+  const syncUser = useSyncUser();
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -29,15 +31,21 @@ function RootLayoutNav() {
     if (isSignedIn) {
       // Register for push notifications when signed in
       registerPushNotifications();
+      // Sync user with backend
+      syncUser.mutate({});
     }
-  }, [isSignedIn, registerPushNotifications]);
+  }, [isSignedIn]);
 
   return (
     <>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(app)" />
+        <Stack.Screen name="workout/[id]" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="workout/[id]/add-exercise" />
+        <Stack.Screen name="workout/[id]/summary" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="templates/new" />
       </Stack>
     </>
   );
