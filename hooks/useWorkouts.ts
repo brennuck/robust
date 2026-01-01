@@ -22,6 +22,9 @@ export function useWorkout(id: string | null) {
     queryKey: ['workout', id],
     queryFn: () => api.get<WorkoutResponse>(`/workouts/${id}`),
     enabled: !!id,
+    // Keep showing stale data while revalidating
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }
 
@@ -38,7 +41,7 @@ export function useStartWorkout() {
   });
 }
 
-// Add exercise to workout
+// Add exercise to workout with optimistic update
 export function useAddExercise() {
   const queryClient = useQueryClient();
 
@@ -51,7 +54,7 @@ export function useAddExercise() {
   });
 }
 
-// Update set
+// Update set with optimistic update - THIS IS THE KEY ONE
 export function useUpdateSet() {
   const queryClient = useQueryClient();
 
@@ -64,33 +67,135 @@ export function useUpdateSet() {
       workoutId: string;
       data: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'completed' | 'isWarmup' | 'isDropset' | 'isFailure'>>;
     }) => api.patch<{ set: WorkoutSet; isPR: boolean }>(`/workouts/sets/${setId}`, data),
-    onSuccess: (_, { workoutId }) => {
+    onMutate: async ({ setId, workoutId, data }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['workout', workoutId] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<WorkoutResponse>(['workout', workoutId]);
+
+      // Optimistically update the set
+      queryClient.setQueryData<WorkoutResponse>(['workout', workoutId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          workout: {
+            ...old.workout,
+            exercises: old.workout.exercises.map((ex) => ({
+              ...ex,
+              sets: ex.sets.map((set) =>
+                set.id === setId ? { ...set, ...data } : set
+              ),
+            })),
+          },
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (_err, { workoutId }, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        queryClient.setQueryData(['workout', workoutId], context.previousData);
+      }
+    },
+    onSettled: (_, __, { workoutId }) => {
+      // Sync with server in background
       queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
     },
   });
 }
 
-// Add set to exercise
+// Add set to exercise with optimistic update
 export function useAddSet() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ exerciseId, workoutId }: { exerciseId: string; workoutId: string }) =>
       api.post<{ set: WorkoutSet }>(`/workouts/exercises/${exerciseId}/sets`),
-    onSuccess: (_, { workoutId }) => {
+    onMutate: async ({ exerciseId, workoutId }) => {
+      await queryClient.cancelQueries({ queryKey: ['workout', workoutId] });
+      const previousData = queryClient.getQueryData<WorkoutResponse>(['workout', workoutId]);
+
+      // Optimistically add the set
+      queryClient.setQueryData<WorkoutResponse>(['workout', workoutId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          workout: {
+            ...old.workout,
+            exercises: old.workout.exercises.map((ex) =>
+              ex.id === exerciseId
+                ? {
+                    ...ex,
+                    sets: [
+                      ...ex.sets,
+                      {
+                        id: `temp-${Date.now()}`,
+                        order: ex.sets.length,
+                        weight: undefined,
+                        reps: undefined,
+                        isWarmup: false,
+                        isDropset: false,
+                        isFailure: false,
+                        isPR: false,
+                        completed: false,
+                      } as WorkoutSet,
+                    ],
+                  }
+                : ex
+            ),
+          },
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (_err, { workoutId }, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['workout', workoutId], context.previousData);
+      }
+    },
+    onSettled: (_, __, { workoutId }) => {
       queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
     },
   });
 }
 
-// Delete set
+// Delete set with optimistic update
 export function useDeleteSet() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ setId, workoutId }: { setId: string; workoutId: string }) =>
       api.delete<{ success: boolean }>(`/workouts/sets/${setId}`),
-    onSuccess: (_, { workoutId }) => {
+    onMutate: async ({ setId, workoutId }) => {
+      await queryClient.cancelQueries({ queryKey: ['workout', workoutId] });
+      const previousData = queryClient.getQueryData<WorkoutResponse>(['workout', workoutId]);
+
+      // Optimistically remove the set
+      queryClient.setQueryData<WorkoutResponse>(['workout', workoutId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          workout: {
+            ...old.workout,
+            exercises: old.workout.exercises.map((ex) => ({
+              ...ex,
+              sets: ex.sets.filter((set) => set.id !== setId),
+            })),
+          },
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (_err, { workoutId }, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['workout', workoutId], context.previousData);
+      }
+    },
+    onSettled: (_, __, { workoutId }) => {
       queryClient.invalidateQueries({ queryKey: ['workout', workoutId] });
     },
   });
@@ -160,4 +265,3 @@ export function formatDuration(seconds: number): string {
   }
   return `${secs}s`;
 }
-

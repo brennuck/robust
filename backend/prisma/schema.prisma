@@ -23,6 +23,7 @@ model User {
   pushTokens      PushToken[]
   workouts        Workout[]
   workoutTemplates WorkoutTemplate[]
+  routineFolders  RoutineFolder[]
   personalRecords PersonalRecord[]
 
   @@map("users")
@@ -120,15 +121,37 @@ model WorkoutSet {
   @@map("workout_sets")
 }
 
+// Routine Folders
+model RoutineFolder {
+  id        String   @id @default(cuid())
+  name      String
+  color     String?  // hex color for UI
+  order     Int      @default(0)
+  
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  templates WorkoutTemplate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("routine_folders")
+}
+
 // Workout Templates (routines)
 model WorkoutTemplate {
   id        String   @id @default(cuid())
   name      String
   notes     String?
   color     String?  // hex color for UI
+  dayOfWeek Int?     // 0=Sunday, 1=Monday, ..., 6=Saturday (optional)
   
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
+
+  folder   RoutineFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folderId String?
 
   exercises TemplateExercise[]
 

@@ -64,6 +64,8 @@ const createTemplateSchema = z.object({
   name: z.string().min(1).max(100),
   notes: z.string().optional(),
   color: z.string().optional(),
+  folderId: z.string().optional(),
+  dayOfWeek: z.number().min(0).max(6).optional(),
   exercises: z.array(z.object({
     exerciseId: z.string(),
     targetSets: z.number().min(1).max(20).default(3),
@@ -81,13 +83,23 @@ templatesRouter.post('/', async (req, res) => {
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const { name, notes, color, exercises = [] } = createTemplateSchema.parse(req.body);
+    const { name, notes, color, folderId, dayOfWeek, exercises = [] } = createTemplateSchema.parse(req.body);
+
+    // If folderId provided, verify it belongs to user
+    if (folderId) {
+      const folder = await prisma.routineFolder.findFirst({
+        where: { id: folderId, userId: user.id },
+      });
+      if (!folder) return res.status(404).json({ error: 'Folder not found' });
+    }
 
     const template = await prisma.workoutTemplate.create({
       data: {
         name,
         notes,
         color,
+        folderId,
+        dayOfWeek,
         userId: user.id,
         exercises: {
           create: exercises.map((e, index) => ({
@@ -151,9 +163,16 @@ templatesRouter.patch('/:id', async (req, res) => {
       });
     }
 
+    const { dayOfWeek } = createTemplateSchema.partial().parse(req.body);
+    
     const template = await prisma.workoutTemplate.update({
       where: { id: existing.id },
-      data: { name, notes, color },
+      data: { 
+        name, 
+        notes, 
+        color,
+        ...(dayOfWeek !== undefined && { dayOfWeek }),
+      },
       include: {
         exercises: {
           include: { exercise: true },

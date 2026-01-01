@@ -27,17 +27,7 @@ import { useTheme } from '@/providers';
 import { typography, spacing, radius, colors } from '@/lib/theme';
 import type { WorkoutExercise, WorkoutSet } from '@/types/workout';
 
-function SetRow({
-  set,
-  index,
-  workoutId,
-  onUpdate,
-}: {
-  set: WorkoutSet;
-  index: number;
-  workoutId: string;
-  onUpdate: () => void;
-}) {
+function SetRow({ set, index, workoutId }: { set: WorkoutSet; index: number; workoutId: string }) {
   const { theme } = useTheme();
   const updateSet = useUpdateSet();
   const deleteSet = useDeleteSet();
@@ -54,8 +44,9 @@ function SetRow({
       return;
     }
 
-    try {
-      const result = await updateSet.mutateAsync({
+    // Optimistic update handles the UI - no need to wait
+    updateSet.mutate(
+      {
         setId: set.id,
         workoutId,
         data: {
@@ -63,17 +54,19 @@ function SetRow({
           reps: repsNum,
           completed: !set.completed,
         },
-      });
-
-      if (result.isPR) {
-        Vibration.vibrate(Platform.OS === 'ios' ? [0, 100, 50, 100] : 200);
-        Alert.alert('🏆 New PR!', `${weightNum} lbs × ${repsNum} reps`);
+      },
+      {
+        onSuccess: (result) => {
+          if (result.isPR) {
+            Vibration.vibrate(Platform.OS === 'ios' ? [0, 100, 50, 100] : 200);
+            Alert.alert('🏆 New PR!', `${weightNum} lbs × ${repsNum} reps`);
+          }
+        },
+        onError: () => {
+          Alert.alert('Error', 'Failed to update set');
+        },
       }
-
-      onUpdate();
-    } catch {
-      Alert.alert('Error', 'Failed to update set');
-    }
+    );
   };
 
   const handleDelete = () => {
@@ -82,13 +75,16 @@ function SetRow({
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteSet.mutateAsync({ setId: set.id, workoutId });
-            onUpdate();
-          } catch {
-            Alert.alert('Error', 'Failed to delete set');
-          }
+        onPress: () => {
+          // Optimistic update handles the UI immediately
+          deleteSet.mutate(
+            { setId: set.id, workoutId },
+            {
+              onError: () => {
+                Alert.alert('Error', 'Failed to delete set');
+              },
+            }
+          );
         },
       },
     ]);
@@ -172,25 +168,20 @@ function SetRow({
   );
 }
 
-function ExerciseCard({
-  exercise,
-  workoutId,
-  onUpdate,
-}: {
-  exercise: WorkoutExercise;
-  workoutId: string;
-  onUpdate: () => void;
-}) {
+function ExerciseCard({ exercise, workoutId }: { exercise: WorkoutExercise; workoutId: string }) {
   const { theme } = useTheme();
   const addSet = useAddSet();
 
-  const handleAddSet = async () => {
-    try {
-      await addSet.mutateAsync({ exerciseId: exercise.id, workoutId });
-      onUpdate();
-    } catch {
-      Alert.alert('Error', 'Failed to add set');
-    }
+  const handleAddSet = () => {
+    // Optimistic update handles the UI immediately
+    addSet.mutate(
+      { exerciseId: exercise.id, workoutId },
+      {
+        onError: () => {
+          Alert.alert('Error', 'Failed to add set');
+        },
+      }
+    );
   };
 
   return (
@@ -214,7 +205,7 @@ function ExerciseCard({
       </View>
 
       {exercise.sets.map((set, index) => (
-        <SetRow key={set.id} set={set} index={index} workoutId={workoutId} onUpdate={onUpdate} />
+        <SetRow key={set.id} set={set} index={index} workoutId={workoutId} />
       ))}
 
       <TouchableOpacity
@@ -232,7 +223,7 @@ export default function ActiveWorkout() {
   const router = useRouter();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { data, refetch } = useWorkout(id);
+  const { data } = useWorkout(id);
   const completeWorkout = useCompleteWorkout();
 
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -329,12 +320,7 @@ export default function ActiveWorkout() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         {workout.exercises.map((exercise) => (
-          <ExerciseCard
-            key={exercise.id}
-            exercise={exercise}
-            workoutId={id}
-            onUpdate={() => refetch()}
-          />
+          <ExerciseCard key={exercise.id} exercise={exercise} workoutId={id} />
         ))}
 
         <TouchableOpacity

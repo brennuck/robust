@@ -72,16 +72,19 @@ export default function AddExercise() {
     return data?.exercises || [];
   }, [data]);
 
-  const handleSelect = async (exercise: Exercise) => {
-    try {
-      await addExercise.mutateAsync({
-        workoutId,
-        exerciseId: exercise.id,
-      });
-      router.back();
-    } catch {
-      Alert.alert('Error', 'Failed to add exercise');
-    }
+  const handleSelect = (exercise: Exercise) => {
+    // Navigate back immediately for instant feel
+    router.back();
+    
+    // Add exercise in background
+    addExercise.mutate({
+      workoutId,
+      exerciseId: exercise.id,
+    }, {
+      onError: () => {
+        Alert.alert('Error', 'Failed to add exercise');
+      }
+    });
   };
 
   return (

@@ -62,7 +62,34 @@ export interface WorkoutTemplate {
   name: string;
   notes?: string;
   color?: string;
+  folderId?: string;
+  dayOfWeek?: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
   exercises: TemplateExercise[];
+}
+
+// Day of week helpers
+export const DAYS_OF_WEEK = [
+  { value: 0, label: 'Sunday', short: 'Sun' },
+  { value: 1, label: 'Monday', short: 'Mon' },
+  { value: 2, label: 'Tuesday', short: 'Tue' },
+  { value: 3, label: 'Wednesday', short: 'Wed' },
+  { value: 4, label: 'Thursday', short: 'Thu' },
+  { value: 5, label: 'Friday', short: 'Fri' },
+  { value: 6, label: 'Saturday', short: 'Sat' },
+] as const;
+
+export function getDayLabel(dayOfWeek?: number): string | null {
+  if (dayOfWeek === undefined || dayOfWeek === null) return null;
+  return DAYS_OF_WEEK[dayOfWeek]?.short || null;
+}
+
+// Routine folder
+export interface RoutineFolder {
+  id: string;
+  name: string;
+  color?: string;
+  order: number;
+  templates: WorkoutTemplate[];
 }
 
 // Personal record
@@ -92,6 +119,15 @@ export interface ExercisesResponse {
 
 export interface TemplatesResponse {
   templates: WorkoutTemplate[];
+}
+
+export interface FoldersResponse {
+  folders: RoutineFolder[];
+  unfolderedTemplates: WorkoutTemplate[];
+}
+
+export interface FolderResponse {
+  folder: RoutineFolder;
 }
 
 export interface TemplateResponse {

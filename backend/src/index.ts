@@ -8,6 +8,7 @@ import { pushRouter } from './routes/push.js';
 import { workoutsRouter } from './routes/workouts.js';
 import { exercisesRouter } from './routes/exercises.js';
 import { templatesRouter } from './routes/templates.js';
+import { foldersRouter } from './routes/folders.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -36,6 +37,7 @@ app.use('/api/push', requireAuth(), pushRouter);
 app.use('/api/workouts', requireAuth(), workoutsRouter);
 app.use('/api/exercises', requireAuth(), exercisesRouter);
 app.use('/api/templates', requireAuth(), templatesRouter);
+app.use('/api/folders', requireAuth(), foldersRouter);
 
 // Sync user from Clerk to database
 app.post('/api/auth/sync', requireAuth(), async (req, res) => {

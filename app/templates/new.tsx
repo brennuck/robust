@@ -12,10 +12,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCreateTemplate } from '@/hooks/useTemplates';
+import { useFolders } from '@/hooks/useFolders';
 import { useExercises, getMuscleGroupInfo } from '@/hooks/useExercises';
 import { useTheme } from '@/providers';
 import { typography, spacing, radius } from '@/lib/theme';
 import type { Exercise } from '@/types/workout';
+import { DAYS_OF_WEEK } from '@/types/workout';
 
 const COLORS = [
   '#6B8E6B', '#86A789', '#C9A962', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899',
@@ -33,12 +35,17 @@ export default function NewTemplate() {
   const insets = useSafeAreaInsets();
   const createTemplate = useCreateTemplate();
   const { data: exercisesData } = useExercises();
+  const { data: foldersData } = useFolders();
 
   const [name, setName] = useState('');
   const [color, setColor] = useState(COLORS[0]);
+  const [folderId, setFolderId] = useState<string | undefined>(undefined);
+  const [dayOfWeek, setDayOfWeek] = useState<number | undefined>(undefined);
   const [exercises, setExercises] = useState<TemplateExercise[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [search, setSearch] = useState('');
+
+  const folders = foldersData?.folders || [];
 
   const filteredExercises = exercisesData?.exercises.filter(
     e => e.name.toLowerCase().includes(search.toLowerCase())
@@ -71,19 +78,23 @@ export default function NewTemplate() {
       return;
     }
 
+    // Navigate back immediately for instant feel
+    router.back();
+    
     try {
       await createTemplate.mutateAsync({
         name: name.trim(),
         color,
+        folderId,
+        dayOfWeek,
         exercises: exercises.map(e => ({
           exerciseId: e.exercise.id,
           targetSets: e.targetSets,
           targetReps: e.targetReps,
         })),
       });
-      router.back();
     } catch {
-      Alert.alert('Error', 'Failed to create template');
+      Alert.alert('Error', 'Failed to create template. Please try again.');
     }
   };
 
@@ -207,6 +218,105 @@ export default function NewTemplate() {
           </View>
         </View>
 
+        {/* Folder */}
+        {folders.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: theme.textTertiary }]}>Folder (Optional)</Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.folderPicker}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.folderOption,
+                  { backgroundColor: theme.backgroundSecondary },
+                  !folderId && { backgroundColor: theme.primary },
+                ]}
+                onPress={() => setFolderId(undefined)}
+              >
+                <Text style={[
+                  styles.folderOptionText,
+                  { color: theme.textSecondary },
+                  !folderId && { color: theme.textInverse },
+                ]}>
+                  None
+                </Text>
+              </TouchableOpacity>
+              {folders.map(folder => (
+                <TouchableOpacity
+                  key={folder.id}
+                  style={[
+                    styles.folderOption,
+                    { backgroundColor: theme.backgroundSecondary },
+                    folderId === folder.id && { backgroundColor: folder.color || theme.primary },
+                  ]}
+                  onPress={() => setFolderId(folder.id)}
+                >
+                  <Ionicons 
+                    name="folder" 
+                    size={14} 
+                    color={folderId === folder.id ? '#FFF' : theme.textSecondary} 
+                  />
+                  <Text style={[
+                    styles.folderOptionText,
+                    { color: theme.textSecondary },
+                    folderId === folder.id && { color: '#FFF' },
+                  ]}>
+                    {folder.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Day of Week */}
+        <View style={styles.section}>
+          <Text style={[styles.label, { color: theme.textTertiary }]}>Day (Optional)</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dayPicker}
+          >
+            <TouchableOpacity
+              style={[
+                styles.dayOption,
+                { backgroundColor: theme.backgroundSecondary },
+                dayOfWeek === undefined && { backgroundColor: theme.primary },
+              ]}
+              onPress={() => setDayOfWeek(undefined)}
+            >
+              <Text style={[
+                styles.dayOptionText,
+                { color: theme.textSecondary },
+                dayOfWeek === undefined && { color: theme.textInverse },
+              ]}>
+                Any
+              </Text>
+            </TouchableOpacity>
+            {DAYS_OF_WEEK.map(day => (
+              <TouchableOpacity
+                key={day.value}
+                style={[
+                  styles.dayOption,
+                  { backgroundColor: theme.backgroundSecondary },
+                  dayOfWeek === day.value && { backgroundColor: theme.primary },
+                ]}
+                onPress={() => setDayOfWeek(day.value)}
+              >
+                <Text style={[
+                  styles.dayOptionText,
+                  { color: theme.textSecondary },
+                  dayOfWeek === day.value && { color: theme.textInverse },
+                ]}>
+                  {day.short}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Exercises */}
         <View style={styles.section}>
           <Text style={[styles.label, { color: theme.textTertiary }]}>Exercises</Text>
@@ -324,6 +434,39 @@ const styles = StyleSheet.create({
   colorSelected: {
     borderWidth: 3,
     borderColor: '#FFF',
+  },
+  folderPicker: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingRight: spacing.base,
+  },
+  folderOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  folderOptionText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '500',
+  },
+  dayPicker: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingRight: spacing.base,
+  },
+  dayOption: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    minWidth: 44,
+    alignItems: 'center',
+  },
+  dayOptionText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '500',
   },
   exerciseCard: {
     borderRadius: radius.md,
