@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  FlatList,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
@@ -21,6 +22,27 @@ import { DAYS_OF_WEEK } from '@/types/workout';
 
 const COLORS = [
   '#6B8E6B', '#86A789', '#C9A962', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899',
+];
+
+const MUSCLE_GROUPS = [
+  { id: 'all', name: 'All' },
+  { id: 'chest', name: 'Chest' },
+  { id: 'back', name: 'Back' },
+  { id: 'shoulders', name: 'Shoulders' },
+  { id: 'arms', name: 'Arms' },
+  { id: 'legs', name: 'Legs' },
+  { id: 'core', name: 'Core' },
+  { id: 'cardio', name: 'Cardio' },
+];
+
+const EQUIPMENT_TYPES = [
+  { id: 'all', name: 'All Equipment' },
+  { id: 'barbell', name: 'Barbell' },
+  { id: 'dumbbell', name: 'Dumbbell' },
+  { id: 'machine', name: 'Machine' },
+  { id: 'cable', name: 'Cable' },
+  { id: 'bodyweight', name: 'Bodyweight' },
+  { id: 'kettlebell', name: 'Kettlebell' },
 ];
 
 interface TemplateExercise {
@@ -44,17 +66,76 @@ export default function NewTemplate() {
   const [exercises, setExercises] = useState<TemplateExercise[]>([]);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedMuscle, setSelectedMuscle] = useState('all');
+  const [selectedEquipment, setSelectedEquipment] = useState('all');
+  const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
 
   const folders = foldersData?.folders || [];
 
-  const filteredExercises = exercisesData?.exercises.filter(
-    e => e.name.toLowerCase().includes(search.toLowerCase())
-  ) || [];
+  // Filter exercises based on search, muscle group, and equipment
+  const filteredExercises = useMemo(() => {
+    let result = exercisesData?.exercises || [];
+    
+    if (search) {
+      result = result.filter(e => 
+        e.name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    if (selectedMuscle !== 'all') {
+      result = result.filter(e => 
+        e.muscleGroup.toLowerCase() === selectedMuscle.toLowerCase()
+      );
+    }
+    
+    if (selectedEquipment !== 'all') {
+      result = result.filter(e => 
+        e.equipment.toLowerCase() === selectedEquipment.toLowerCase()
+      );
+    }
+    
+    return result;
+  }, [exercisesData?.exercises, search, selectedMuscle, selectedEquipment]);
 
-  const handleAddExercise = (exercise: Exercise) => {
-    setExercises([...exercises, { exercise, targetSets: 3, targetReps: '8-12' }]);
+  // Toggle exercise selection
+  const toggleExerciseSelection = (exerciseId: string) => {
+    setSelectedExercises(prev => {
+      const next = new Set(prev);
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId);
+      } else {
+        next.add(exerciseId);
+      }
+      return next;
+    });
+  };
+
+  // Add all selected exercises
+  const handleAddSelectedExercises = () => {
+    const exercisesToAdd = exercisesData?.exercises.filter(e => 
+      selectedExercises.has(e.id)
+    ) || [];
+    
+    const newExercises = exercisesToAdd.map(exercise => ({
+      exercise,
+      targetSets: 3,
+      targetReps: '8-12',
+    }));
+    
+    setExercises([...exercises, ...newExercises]);
+    setSelectedExercises(new Set());
     setShowExercisePicker(false);
     setSearch('');
+    setSelectedMuscle('all');
+    setSelectedEquipment('all');
+  };
+
+  const handleCancelPicker = () => {
+    setSelectedExercises(new Set());
+    setShowExercisePicker(false);
+    setSearch('');
+    setSelectedMuscle('all');
+    setSelectedEquipment('all');
   };
 
   const handleRemoveExercise = (index: number) => {
@@ -99,18 +180,21 @@ export default function NewTemplate() {
   };
 
   if (showExercisePicker) {
+    const alreadyAddedIds = new Set(exercises.map(e => e.exercise.id));
+    
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Stack.Screen
           options={{
             headerShown: true,
-            title: 'Add Exercise',
+            title: 'Add Exercises',
             headerStyle: { backgroundColor: theme.background },
             headerTintColor: theme.text,
             headerShadowVisible: false,
           }}
         />
         
+        {/* Search */}
         <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground }]}>
           <Ionicons name="search" size={20} color={theme.inputPlaceholder} />
           <TextInput
@@ -119,28 +203,98 @@ export default function NewTemplate() {
             placeholderTextColor={theme.inputPlaceholder}
             value={search}
             onChangeText={setSearch}
-            autoFocus
           />
-          <TouchableOpacity onPress={() => setShowExercisePicker(false)}>
-            <Text style={[styles.cancelText, { color: theme.primary }]}>Cancel</Text>
-          </TouchableOpacity>
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={20} color={theme.textTertiary} />
+            </TouchableOpacity>
+          )}
         </View>
 
-        <ScrollView>
-          {filteredExercises.map(exercise => {
+        {/* Muscle Group Filter */}
+        <View style={styles.filterSection}>
+          <Text style={[styles.filterLabel, { color: theme.textTertiary }]}>Body Part</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterList}
+          >
+            {MUSCLE_GROUPS.map(group => (
+              <TouchableOpacity
+                key={group.id}
+                style={[
+                  styles.filterChip,
+                  { backgroundColor: theme.backgroundSecondary },
+                  selectedMuscle === group.id && { backgroundColor: theme.primary },
+                ]}
+                onPress={() => setSelectedMuscle(group.id)}
+              >
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    { color: theme.textSecondary },
+                    selectedMuscle === group.id && { color: theme.textInverse },
+                  ]}
+                >
+                  {group.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Equipment Filter */}
+        <View style={styles.filterSection}>
+          <Text style={[styles.filterLabel, { color: theme.textTertiary }]}>Equipment</Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterList}
+          >
+            {EQUIPMENT_TYPES.map(equip => (
+              <TouchableOpacity
+                key={equip.id}
+                style={[
+                  styles.filterChip,
+                  { backgroundColor: theme.backgroundSecondary },
+                  selectedEquipment === equip.id && { backgroundColor: theme.primary },
+                ]}
+                onPress={() => setSelectedEquipment(equip.id)}
+              >
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    { color: theme.textSecondary },
+                    selectedEquipment === equip.id && { color: theme.textInverse },
+                  ]}
+                >
+                  {equip.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Exercise List */}
+        <FlatList
+          data={filteredExercises}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.exerciseList}
+          renderItem={({ item: exercise }) => {
             const muscleInfo = getMuscleGroupInfo(exercise.muscleGroup);
-            const isAdded = exercises.some(e => e.exercise.id === exercise.id);
+            const isAlreadyAdded = alreadyAddedIds.has(exercise.id);
+            const isSelected = selectedExercises.has(exercise.id);
             
             return (
               <TouchableOpacity
-                key={exercise.id}
                 style={[
                   styles.exerciseRow, 
-                  { borderBottomColor: theme.border },
-                  isAdded && styles.exerciseRowDisabled,
+                  { backgroundColor: theme.card, borderColor: theme.cardBorder },
+                  isSelected && { backgroundColor: `${theme.primary}15`, borderColor: theme.primary },
+                  isAlreadyAdded && styles.exerciseRowDisabled,
                 ]}
-                onPress={() => !isAdded && handleAddExercise(exercise)}
-                disabled={isAdded}
+                onPress={() => !isAlreadyAdded && toggleExerciseSelection(exercise.id)}
+                disabled={isAlreadyAdded}
               >
                 <View style={[styles.muscleIndicator, { backgroundColor: muscleInfo.color }]} />
                 <View style={styles.exerciseInfo}>
@@ -151,15 +305,54 @@ export default function NewTemplate() {
                     {muscleInfo.name} • {exercise.equipment}
                   </Text>
                 </View>
-                {isAdded ? (
-                  <Ionicons name="checkmark-circle" size={24} color={theme.primary} />
+                {isAlreadyAdded ? (
+                  <View style={[styles.addedBadge, { backgroundColor: theme.backgroundSecondary }]}>
+                    <Text style={[styles.addedBadgeText, { color: theme.textTertiary }]}>Added</Text>
+                  </View>
+                ) : isSelected ? (
+                  <View style={[styles.checkCircle, { backgroundColor: theme.primary }]}>
+                    <Ionicons name="checkmark" size={16} color="#FFF" />
+                  </View>
                 ) : (
-                  <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
+                  <View style={[styles.emptyCircle, { borderColor: theme.border }]} />
                 )}
               </TouchableOpacity>
             );
-          })}
-        </ScrollView>
+          }}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Ionicons name="barbell-outline" size={48} color={theme.textTertiary} />
+              <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
+                No exercises found
+              </Text>
+            </View>
+          }
+        />
+
+        {/* Footer with selection count and actions */}
+        <View style={[styles.pickerFooter, { backgroundColor: theme.background, borderTopColor: theme.border, paddingBottom: insets.bottom + spacing.base }]}>
+          <TouchableOpacity
+            style={[styles.cancelButton, { backgroundColor: theme.backgroundSecondary }]}
+            onPress={handleCancelPicker}
+          >
+            <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.addSelectedButton, 
+              { backgroundColor: theme.primary },
+              selectedExercises.size === 0 && styles.buttonDisabled,
+            ]}
+            onPress={handleAddSelectedExercises}
+            disabled={selectedExercises.size === 0}
+          >
+            <Text style={[styles.addSelectedButtonText, { color: theme.textInverse }]}>
+              {selectedExercises.size === 0 
+                ? 'Select Exercises' 
+                : `Add ${selectedExercises.size} Exercise${selectedExercises.size > 1 ? 's' : ''}`}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -543,14 +736,44 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     fontWeight: '500',
   },
+  filterSection: {
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  filterLabel: {
+    fontSize: typography.sizes.xs,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+  },
+  filterList: {
+    gap: spacing.sm,
+    paddingRight: spacing.base,
+  },
+  filterChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  filterChipText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '500',
+  },
+  exerciseList: {
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.base,
+  },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.base,
-    borderBottomWidth: 1,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
   },
   exerciseRowDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   exerciseInfo: {
     flex: 1,
@@ -563,6 +786,52 @@ const styles = StyleSheet.create({
   exerciseMeta: {
     fontSize: typography.sizes.sm,
     textTransform: 'capitalize',
+  },
+  checkCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+  },
+  addedBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+  },
+  addedBadgeText: {
+    fontSize: typography.sizes.xs,
+    fontWeight: '500',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing['3xl'],
+  },
+  emptyText: {
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.md,
+  },
+  pickerFooter: {
+    flexDirection: 'row',
+    padding: spacing.base,
+    gap: spacing.md,
+    borderTopWidth: 1,
+  },
+  addSelectedButton: {
+    flex: 2,
+    borderRadius: radius.md,
+    paddingVertical: spacing.base,
+    alignItems: 'center',
+  },
+  addSelectedButtonText: {
+    fontSize: typography.sizes.base,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
