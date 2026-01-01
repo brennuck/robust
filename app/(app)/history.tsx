@@ -10,9 +10,12 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkouts, formatDuration, calculateWorkoutStats } from '@/hooks/useWorkouts';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius, colors } from '@/lib/theme';
 import type { Workout } from '@/types/workout';
 
 function WorkoutCard({ workout, onPress }: { workout: Workout; onPress: () => void }) {
+  const { theme } = useTheme();
   const stats = calculateWorkoutStats(workout);
   const date = new Date(workout.startedAt);
   const isToday = new Date().toDateString() === date.toDateString();
@@ -30,52 +33,59 @@ function WorkoutCard({ workout, onPress }: { workout: Workout; onPress: () => vo
       });
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <TouchableOpacity 
+      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.cardBorder }]} 
+      onPress={onPress}
+    >
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{workout.name}</Text>
-        <Text style={styles.cardDate}>{dateLabel}</Text>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>{workout.name}</Text>
+        <Text style={[styles.cardDate, { color: theme.textTertiary }]}>{dateLabel}</Text>
       </View>
 
       <View style={styles.cardStats}>
         {workout.duration && (
           <View style={styles.stat}>
-            <Ionicons name="time-outline" size={14} color="#64748B" />
-            <Text style={styles.statText}>{formatDuration(workout.duration)}</Text>
-          </View>
-        )}
-        <View style={styles.stat}>
-          <Ionicons name="barbell-outline" size={14} color="#64748B" />
-          <Text style={styles.statText}>{workout.exercises.length} exercises</Text>
-        </View>
-        <View style={styles.stat}>
-          <Ionicons name="layers-outline" size={14} color="#64748B" />
-          <Text style={styles.statText}>{stats.completedSets} sets</Text>
-        </View>
-        {stats.totalVolume > 0 && (
-          <View style={styles.stat}>
-            <Ionicons name="trending-up-outline" size={14} color="#64748B" />
-            <Text style={styles.statText}>
-              {stats.totalVolume.toLocaleString()} lbs
+            <Ionicons name="time-outline" size={14} color={theme.textTertiary} />
+            <Text style={[styles.statText, { color: theme.textSecondary }]}>
+              {formatDuration(workout.duration)}
             </Text>
           </View>
         )}
+        <View style={styles.stat}>
+          <Ionicons name="fitness-outline" size={14} color={theme.textTertiary} />
+          <Text style={[styles.statText, { color: theme.textSecondary }]}>
+            {workout.exercises.length} exercises
+          </Text>
+        </View>
+        <View style={styles.stat}>
+          <Ionicons name="layers-outline" size={14} color={theme.textTertiary} />
+          <Text style={[styles.statText, { color: theme.textSecondary }]}>
+            {stats.completedSets} sets
+          </Text>
+        </View>
       </View>
 
       {stats.prCount > 0 && (
-        <View style={styles.prBadge}>
-          <Ionicons name="trophy" size={12} color="#F59E0B" />
-          <Text style={styles.prText}>{stats.prCount} PR{stats.prCount > 1 ? 's' : ''}</Text>
+        <View style={[styles.prBadge, { backgroundColor: `${colors.gold}15` }]}>
+          <Ionicons name="trophy" size={12} color={colors.gold} />
+          <Text style={[styles.prText, { color: colors.gold }]}>
+            {stats.prCount} PR{stats.prCount > 1 ? 's' : ''}
+          </Text>
         </View>
       )}
 
       <View style={styles.exerciseList}>
         {workout.exercises.slice(0, 3).map((ex) => (
-          <Text key={ex.id} style={styles.exerciseName} numberOfLines={1}>
+          <Text 
+            key={ex.id} 
+            style={[styles.exerciseName, { color: theme.textSecondary }]} 
+            numberOfLines={1}
+          >
             {ex.sets.filter(s => s.completed).length}× {ex.exercise.name}
           </Text>
         ))}
         {workout.exercises.length > 3 && (
-          <Text style={styles.moreExercises}>
+          <Text style={[styles.moreExercises, { color: theme.textTertiary }]}>
             +{workout.exercises.length - 3} more
           </Text>
         )}
@@ -86,6 +96,7 @@ function WorkoutCard({ workout, onPress }: { workout: Workout; onPress: () => vo
 
 export default function History() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [page, setPage] = useState(1);
   const { data, isLoading, refetch } = useWorkouts(page);
   const [refreshing, setRefreshing] = useState(false);
@@ -101,16 +112,18 @@ export default function History() {
 
   const renderEmpty = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="calendar-outline" size={64} color="#475569" />
-      <Text style={styles.emptyTitle}>No Workouts Yet</Text>
-      <Text style={styles.emptyText}>
+      <View style={[styles.emptyIcon, { backgroundColor: `${theme.primary}15` }]}>
+        <Ionicons name="calendar-outline" size={32} color={theme.primary} />
+      </View>
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>No Workouts Yet</Text>
+      <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
         Complete your first workout to see it here
       </Text>
     </View>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <FlatList
         data={completedWorkouts}
         keyExtractor={(item) => item.id}
@@ -122,7 +135,11 @@ export default function History() {
         )}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22D3EE" />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
+            tintColor={theme.primary} 
+          />
         }
         ListEmptyComponent={!isLoading ? renderEmpty : null}
         onEndReached={() => {
@@ -139,41 +156,36 @@ export default function History() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
   list: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing.base,
+    paddingBottom: spacing['3xl'],
   },
   card: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: radius.lg,
+    padding: spacing.base,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#334155',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
     flex: 1,
   },
   cardDate: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: typography.sizes.xs,
   },
   cardStats: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 12,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   stat: {
     flexDirection: 'row',
@@ -181,54 +193,53 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statText: {
-    fontSize: 12,
-    color: '#94A3B8',
+    fontSize: typography.sizes.xs,
   },
   prBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: radius.sm,
     alignSelf: 'flex-start',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   prText: {
-    fontSize: 12,
+    fontSize: typography.sizes.xs,
     fontWeight: '600',
-    color: '#F59E0B',
   },
   exerciseList: {
-    gap: 4,
+    gap: 2,
   },
   exerciseName: {
-    fontSize: 13,
-    color: '#94A3B8',
+    fontSize: typography.sizes.sm,
   },
   moreExercises: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 4,
+    fontSize: typography.sizes.xs,
+    marginTop: spacing.xs,
   },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 64,
+    paddingVertical: spacing['4xl'],
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.base,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: typography.sizes.lg,
     fontWeight: '600',
-    color: '#F8FAFC',
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   emptyText: {
-    fontSize: 14,
-    color: '#64748B',
+    fontSize: typography.sizes.sm,
     textAlign: 'center',
   },
 });
-

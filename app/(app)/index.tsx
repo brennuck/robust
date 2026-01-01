@@ -15,9 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTemplates } from '@/hooks/useTemplates';
 import { useStartWorkout } from '@/hooks/useWorkouts';
 import { storage } from '@/lib/storage';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius } from '@/lib/theme';
 
 export default function WorkoutsHome() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { data: templatesData, isLoading, refetch } = useTemplates();
   const startWorkout = useStartWorkout();
 
@@ -60,50 +63,70 @@ export default function WorkoutsHome() {
   const templates = templatesData?.templates || [];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22D3EE" />
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
+            tintColor={theme.primary} 
+          />
         }
       >
         {/* Quick Start */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>QUICK START</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+            Quick Start
+          </Text>
           <TouchableOpacity
-            style={styles.startButton}
+            style={[styles.startButton, { backgroundColor: theme.primary }]}
             onPress={() => setShowNewWorkout(true)}
           >
-            <Ionicons name="add-circle" size={24} color="#0F172A" />
-            <Text style={styles.startButtonText}>Start Empty Workout</Text>
+            <Ionicons name="add" size={22} color={theme.textInverse} />
+            <Text style={[styles.startButtonText, { color: theme.textInverse }]}>
+              Start Empty Workout
+            </Text>
           </TouchableOpacity>
         </View>
 
         {/* Templates */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>ROUTINES</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+              Routines
+            </Text>
             <TouchableOpacity onPress={() => router.push('/templates/new')}>
-              <Text style={styles.sectionAction}>+ New</Text>
+              <Text style={[styles.sectionAction, { color: theme.primary }]}>
+                + New
+              </Text>
             </TouchableOpacity>
           </View>
 
           {isLoading ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>Loading...</Text>
+            <View style={[styles.emptyState, { backgroundColor: theme.card }]}>
+              <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
+                Loading...
+              </Text>
             </View>
           ) : templates.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="clipboard-outline" size={48} color="#475569" />
-              <Text style={styles.emptyTitle}>No Routines Yet</Text>
-              <Text style={styles.emptyText}>
+            <View style={[styles.emptyState, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+              <View style={[styles.emptyIcon, { backgroundColor: `${theme.primary}15` }]}>
+                <Ionicons name="clipboard-outline" size={28} color={theme.primary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                No Routines Yet
+              </Text>
+              <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
                 Create a routine to quickly start your favorite workouts
               </Text>
               <TouchableOpacity
-                style={styles.emptyButton}
+                style={[styles.emptyButton, { backgroundColor: theme.backgroundSecondary }]}
                 onPress={() => router.push('/templates/new')}
               >
-                <Text style={styles.emptyButtonText}>Create Routine</Text>
+                <Text style={[styles.emptyButtonText, { color: theme.text }]}>
+                  Create Routine
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -113,22 +136,32 @@ export default function WorkoutsHome() {
                   key={template.id}
                   style={[
                     styles.templateCard,
-                    template.color ? { borderLeftColor: template.color } : {},
+                    { 
+                      backgroundColor: theme.card,
+                      borderColor: theme.cardBorder,
+                      borderLeftColor: template.color || theme.primary,
+                    },
                   ]}
                   onPress={() => handleStartFromTemplate(template.id, template.name)}
                 >
-                  <Text style={styles.templateName}>{template.name}</Text>
-                  <Text style={styles.templateMeta}>
+                  <Text style={[styles.templateName, { color: theme.text }]}>
+                    {template.name}
+                  </Text>
+                  <Text style={[styles.templateMeta, { color: theme.textTertiary }]}>
                     {template.exercises.length} exercises
                   </Text>
                   <View style={styles.templateExercises}>
                     {template.exercises.slice(0, 3).map((ex) => (
-                      <Text key={ex.id} style={styles.templateExercise} numberOfLines={1}>
+                      <Text 
+                        key={ex.id} 
+                        style={[styles.templateExercise, { color: theme.textSecondary }]} 
+                        numberOfLines={1}
+                      >
                         • {ex.exercise.name}
                       </Text>
                     ))}
                     {template.exercises.length > 3 && (
-                      <Text style={styles.templateMore}>
+                      <Text style={[styles.templateMore, { color: theme.textTertiary }]}>
                         +{template.exercises.length - 3} more
                       </Text>
                     )}
@@ -148,29 +181,40 @@ export default function WorkoutsHome() {
         onRequestClose={() => setShowNewWorkout(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>New Workout</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              New Workout
+            </Text>
             <TextInput
-              style={styles.modalInput}
+              style={[
+                styles.modalInput,
+                { 
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.inputBorder,
+                  color: theme.inputText,
+                },
+              ]}
               placeholder="Workout name (optional)"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={theme.inputPlaceholder}
               value={workoutName}
               onChangeText={setWorkoutName}
               autoFocus
             />
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={styles.modalCancel}
+                style={[styles.modalCancel, { backgroundColor: theme.backgroundSecondary }]}
                 onPress={() => setShowNewWorkout(false)}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: theme.textSecondary }]}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.modalConfirm}
+                style={[styles.modalConfirm, { backgroundColor: theme.primary }]}
                 onPress={handleStartEmpty}
                 disabled={startWorkout.isPending}
               >
-                <Text style={styles.modalConfirmText}>
+                <Text style={[styles.modalConfirmText, { color: theme.textInverse }]}>
                   {startWorkout.isPending ? 'Starting...' : 'Start'}
                 </Text>
               </TouchableOpacity>
@@ -185,167 +229,153 @@ export default function WorkoutsHome() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
   content: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing.base,
+    paddingBottom: spacing['3xl'],
   },
   section: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: typography.sizes.xs,
     fontWeight: '600',
-    color: '#64748B',
     letterSpacing: 1,
-    marginBottom: 12,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
   },
   sectionAction: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
-    color: '#22D3EE',
   },
   startButton: {
-    backgroundColor: '#22D3EE',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.base,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   startButtonText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#0F172A',
   },
   templateGrid: {
-    gap: 12,
+    gap: spacing.md,
   },
   templateCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#22D3EE',
+    borderRadius: radius.md,
+    padding: spacing.base,
+    borderWidth: 1,
+    borderLeftWidth: 3,
   },
   templateName: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   templateMeta: {
-    fontSize: 12,
-    color: '#64748B',
-    marginBottom: 8,
+    fontSize: typography.sizes.xs,
+    marginBottom: spacing.sm,
   },
   templateExercises: {
     gap: 2,
   },
   templateExercise: {
-    fontSize: 13,
-    color: '#94A3B8',
+    fontSize: typography.sizes.sm,
   },
   templateMore: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 4,
+    fontSize: typography.sizes.xs,
+    marginTop: spacing.xs,
   },
   emptyState: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 32,
+    borderRadius: radius.lg,
+    padding: spacing['2xl'],
     alignItems: 'center',
+    borderWidth: 1,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.base,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: typography.sizes.md,
     fontWeight: '600',
-    color: '#F8FAFC',
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   emptyText: {
-    fontSize: 14,
-    color: '#64748B',
+    fontSize: typography.sizes.sm,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.base,
   },
   emptyButton: {
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   emptyButtonText: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
-    color: '#F8FAFC',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.lg,
   },
   modalContent: {
-    backgroundColor: '#1E293B',
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
     width: '100%',
     maxWidth: 400,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    marginBottom: 16,
+    fontSize: typography.sizes.lg,
+    fontWeight: '600',
+    marginBottom: spacing.base,
     textAlign: 'center',
   },
   modalInput: {
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#F8FAFC',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    fontSize: typography.sizes.base,
     borderWidth: 1,
-    borderColor: '#334155',
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   modalCancel: {
     flex: 1,
-    backgroundColor: '#334155',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
   modalCancelText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#94A3B8',
   },
   modalConfirm: {
     flex: 1,
-    backgroundColor: '#22D3EE',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
   modalConfirmText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#0F172A',
   },
 });

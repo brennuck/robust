@@ -12,6 +12,8 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useExercises, getMuscleGroupInfo } from '@/hooks/useExercises';
 import { useAddExercise } from '@/hooks/useWorkouts';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius } from '@/lib/theme';
 import type { Exercise } from '@/types/workout';
 
 const MUSCLE_GROUPS = [
@@ -32,18 +34,22 @@ function ExerciseRow({
   exercise: Exercise;
   onSelect: () => void;
 }) {
+  const { theme } = useTheme();
   const muscleInfo = getMuscleGroupInfo(exercise.muscleGroup);
 
   return (
-    <TouchableOpacity style={styles.exerciseRow} onPress={onSelect}>
+    <TouchableOpacity 
+      style={[styles.exerciseRow, { backgroundColor: theme.card, borderColor: theme.cardBorder }]} 
+      onPress={onSelect}
+    >
       <View style={[styles.muscleIndicator, { backgroundColor: muscleInfo.color }]} />
       <View style={styles.exerciseInfo}>
-        <Text style={styles.exerciseName}>{exercise.name}</Text>
-        <Text style={styles.exerciseMeta}>
+        <Text style={[styles.exerciseName, { color: theme.text }]}>{exercise.name}</Text>
+        <Text style={[styles.exerciseMeta, { color: theme.textTertiary }]}>
           {muscleInfo.name} • {exercise.equipment}
         </Text>
       </View>
-      <Ionicons name="add-circle-outline" size={24} color="#22D3EE" />
+      <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
     </TouchableOpacity>
   );
 }
@@ -51,6 +57,7 @@ function ExerciseRow({
 export default function AddExercise() {
   const { id: workoutId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { theme } = useTheme();
   const addExercise = useAddExercise();
 
   const [search, setSearch] = useState('');
@@ -78,29 +85,30 @@ export default function AddExercise() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
           title: 'Add Exercise',
-          headerStyle: { backgroundColor: '#0F172A' },
-          headerTintColor: '#F8FAFC',
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.text,
+          headerShadowVisible: false,
         }}
       />
 
       {/* Search */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#64748B" />
+      <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground }]}>
+        <Ionicons name="search" size={20} color={theme.inputPlaceholder} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: theme.inputText }]}
           placeholder="Search exercises..."
-          placeholderTextColor="#64748B"
+          placeholderTextColor={theme.inputPlaceholder}
           value={search}
           onChangeText={setSearch}
           autoCorrect={false}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={20} color="#64748B" />
+            <Ionicons name="close-circle" size={20} color={theme.textTertiary} />
           </TouchableOpacity>
         )}
       </View>
@@ -116,14 +124,16 @@ export default function AddExercise() {
           <TouchableOpacity
             style={[
               styles.filterChip,
-              selectedMuscle === item.id && styles.filterChipActive,
+              { backgroundColor: theme.backgroundSecondary },
+              selectedMuscle === item.id && { backgroundColor: theme.primary },
             ]}
             onPress={() => setSelectedMuscle(item.id)}
           >
             <Text
               style={[
                 styles.filterChipText,
-                selectedMuscle === item.id && styles.filterChipTextActive,
+                { color: theme.textSecondary },
+                selectedMuscle === item.id && { color: theme.textInverse },
               ]}
             >
               {item.name}
@@ -143,8 +153,10 @@ export default function AddExercise() {
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyState}>
-              <Ionicons name="barbell-outline" size={48} color="#475569" />
-              <Text style={styles.emptyText}>No exercises found</Text>
+              <Ionicons name="barbell-outline" size={48} color={theme.textTertiary} />
+              <Text style={[styles.emptyText, { color: theme.textTertiary }]}>
+                No exercises found
+              </Text>
             </View>
           ) : null
         }
@@ -156,87 +168,72 @@ export default function AddExercise() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
-    margin: 16,
-    marginBottom: 8,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    gap: 8,
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.sm,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#F8FAFC',
+    paddingVertical: spacing.md,
+    fontSize: typography.sizes.base,
   },
   filterList: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    gap: 8,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.base,
+    gap: spacing.sm,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#1E293B',
-    marginRight: 8,
-  },
-  filterChipActive: {
-    backgroundColor: '#22D3EE',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    marginRight: spacing.sm,
   },
   filterChipText: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '500',
-    color: '#94A3B8',
-  },
-  filterChipTextActive: {
-    color: '#0F172A',
   },
   exerciseList: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing['2xl'],
   },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+    borderRadius: radius.md,
+    padding: spacing.base,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
   },
   muscleIndicator: {
     width: 4,
     height: 40,
     borderRadius: 2,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   exerciseInfo: {
     flex: 1,
   },
   exerciseName: {
-    fontSize: 15,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
     marginBottom: 2,
   },
   exerciseMeta: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: typography.sizes.sm,
     textTransform: 'capitalize',
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 48,
+    paddingVertical: spacing['3xl'],
   },
   emptyText: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 12,
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.md,
   },
 });
-

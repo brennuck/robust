@@ -9,6 +9,8 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius } from '@/lib/theme';
 
 const PRESET_TIMES = [30, 60, 90, 120, 180];
 
@@ -18,6 +20,7 @@ interface RestTimerProps {
 }
 
 export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
+  const { theme } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(defaultTime);
@@ -59,13 +62,11 @@ export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
       intervalRef.current = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
-            // Timer complete
             Vibration.vibrate(Platform.OS === 'ios' ? [0, 200, 100, 200, 100, 200] : 500);
             setIsRunning(false);
             onComplete?.();
             return 0;
           }
-          // Haptic at 3, 2, 1
           if (prev <= 4) {
             Vibration.vibrate(Platform.OS === 'ios' ? 50 : 30);
           }
@@ -81,21 +82,21 @@ export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
     }
   }, [isRunning, timeRemaining, onComplete]);
 
-  const progress = (selectedTime - timeRemaining) / selectedTime;
-
   return (
     <>
       {/* Floating Timer Button */}
       <TouchableOpacity
         style={[
           styles.floatingButton,
-          isRunning && styles.floatingButtonActive,
+          { backgroundColor: isRunning ? theme.accent : theme.primary },
         ]}
         onPress={() => isRunning ? setIsVisible(true) : startTimer()}
       >
-        <Ionicons name="timer-outline" size={24} color="#0F172A" />
+        <Ionicons name="timer-outline" size={24} color={theme.textInverse} />
         {isRunning && (
-          <Text style={styles.floatingTime}>{formatTime(timeRemaining)}</Text>
+          <Text style={[styles.floatingTime, { color: theme.textInverse }]}>
+            {formatTime(timeRemaining)}
+          </Text>
         )}
       </TouchableOpacity>
 
@@ -107,22 +108,17 @@ export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
         onRequestClose={() => setIsVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
             {/* Progress Ring */}
-            <View style={styles.timerCircle}>
+            <View style={[styles.timerCircle, { borderColor: theme.border }]}>
               <View style={styles.timerCircleInner}>
-                <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
-                <Text style={styles.timerLabel}>
+                <Text style={[styles.timerText, { color: theme.text }]}>
+                  {formatTime(timeRemaining)}
+                </Text>
+                <Text style={[styles.timerLabel, { color: theme.textTertiary }]}>
                   {isRunning ? 'Rest' : 'Ready'}
                 </Text>
               </View>
-              {/* Progress indicator */}
-              <View
-                style={[
-                  styles.progressArc,
-                  { transform: [{ rotate: `${progress * 360}deg` }] },
-                ]}
-              />
             </View>
 
             {/* Preset Times */}
@@ -133,7 +129,8 @@ export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
                     key={time}
                     style={[
                       styles.presetButton,
-                      selectedTime === time && styles.presetButtonActive,
+                      { backgroundColor: theme.backgroundSecondary },
+                      selectedTime === time && { backgroundColor: theme.primary },
                     ]}
                     onPress={() => {
                       setSelectedTime(time);
@@ -143,7 +140,8 @@ export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
                     <Text
                       style={[
                         styles.presetText,
-                        selectedTime === time && styles.presetTextActive,
+                        { color: theme.textSecondary },
+                        selectedTime === time && { color: theme.textInverse },
                       ]}
                     >
                       {formatTime(time)}
@@ -158,41 +156,45 @@ export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
               {isRunning ? (
                 <>
                   <TouchableOpacity
-                    style={styles.controlButton}
+                    style={[styles.controlButton, { backgroundColor: theme.backgroundSecondary }]}
                     onPress={() => addTime(-15)}
                   >
-                    <Text style={styles.controlButtonText}>-15s</Text>
+                    <Text style={[styles.controlButtonText, { color: theme.text }]}>-15s</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    style={styles.stopButton}
+                    style={[styles.stopButton, { backgroundColor: theme.error }]}
                     onPress={stopTimer}
                   >
-                    <Ionicons name="stop" size={32} color="#0F172A" />
+                    <Ionicons name="stop" size={32} color={theme.textInverse} />
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    style={styles.controlButton}
+                    style={[styles.controlButton, { backgroundColor: theme.backgroundSecondary }]}
                     onPress={() => addTime(15)}
                   >
-                    <Text style={styles.controlButtonText}>+15s</Text>
+                    <Text style={[styles.controlButtonText, { color: theme.text }]}>+15s</Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
                   <TouchableOpacity
-                    style={styles.cancelButton}
+                    style={[styles.cancelButton, { backgroundColor: theme.backgroundSecondary }]}
                     onPress={() => setIsVisible(false)}
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Text style={[styles.cancelButtonText, { color: theme.textSecondary }]}>
+                      Cancel
+                    </Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
-                    style={styles.startButton}
+                    style={[styles.startButton, { backgroundColor: theme.primary }]}
                     onPress={() => startTimer()}
                   >
-                    <Ionicons name="play" size={24} color="#0F172A" />
-                    <Text style={styles.startButtonText}>Start</Text>
+                    <Ionicons name="play" size={24} color={theme.textInverse} />
+                    <Text style={[styles.startButtonText, { color: theme.textInverse }]}>
+                      Start
+                    </Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -208,7 +210,9 @@ export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
                   onComplete?.();
                 }}
               >
-                <Text style={styles.skipButtonText}>Skip Rest</Text>
+                <Text style={[styles.skipButtonText, { color: theme.textTertiary }]}>
+                  Skip Rest
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -221,33 +225,28 @@ export function RestTimer({ defaultTime = 90, onComplete }: RestTimerProps) {
 const styles = StyleSheet.create({
   floatingButton: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
+    bottom: spacing.xl,
+    right: spacing.xl,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#22D3EE',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
-    gap: 8,
-  },
-  floatingButtonActive: {
-    backgroundColor: '#F59E0B',
+    gap: spacing.sm,
   },
   floatingTime: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '700',
-    color: '#0F172A',
     fontVariant: ['tabular-nums'],
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -255,18 +254,17 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 360,
     alignItems: 'center',
-    padding: 32,
+    padding: spacing['2xl'],
+    borderRadius: radius.xl,
   },
   timerCircle: {
     width: 200,
     height: 200,
     borderRadius: 100,
-    borderWidth: 8,
-    borderColor: '#334155',
+    borderWidth: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 32,
-    position: 'relative',
+    marginBottom: spacing['2xl'],
   },
   timerCircleInner: {
     alignItems: 'center',
@@ -274,103 +272,75 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 48,
     fontWeight: '700',
-    color: '#F8FAFC',
     fontVariant: ['tabular-nums'],
   },
   timerLabel: {
-    fontSize: 16,
-    color: '#64748B',
-    marginTop: 4,
-  },
-  progressArc: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 8,
-    borderColor: 'transparent',
-    borderTopColor: '#22D3EE',
+    fontSize: typography.sizes.base,
+    marginTop: spacing.xs,
   },
   presets: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
-    marginBottom: 24,
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
   },
   presetButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#1E293B',
-  },
-  presetButtonActive: {
-    backgroundColor: '#22D3EE',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
   },
   presetText: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
-    color: '#94A3B8',
-  },
-  presetTextActive: {
-    color: '#0F172A',
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: spacing.base,
   },
   controlButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#1E293B',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
   },
   controlButtonText: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
-    color: '#F8FAFC',
   },
   stopButton: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#EF4444',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#334155',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
   },
   cancelButtonText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#94A3B8',
   },
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#22D3EE',
+    gap: spacing.sm,
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
   },
   startButtonText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#0F172A',
   },
   skipButton: {
-    marginTop: 24,
-    paddingVertical: 12,
+    marginTop: spacing.xl,
+    paddingVertical: spacing.md,
   },
   skipButtonText: {
-    fontSize: 14,
-    color: '#64748B',
+    fontSize: typography.sizes.sm,
   },
 });
-

@@ -2,136 +2,166 @@ import { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
+  TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Alert,
+  Switch,
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { useUser as useClerkUser } from '@clerk/clerk-expo';
-import { useUser, useUpdateUser, useDeleteUser } from '@/hooks/useUser';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth, useUser as useClerkUser } from '@clerk/clerk-expo';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius } from '@/lib/theme';
 
 export default function Profile() {
   const router = useRouter();
+  const { signOut } = useAuth();
   const { user: clerkUser } = useClerkUser();
-  const { data, isLoading } = useUser();
-  const updateUser = useUpdateUser();
-  const deleteUser = useDeleteUser();
+  const { theme, mode, isDark, setMode, toggleTheme } = useTheme();
 
-  const [name, setName] = useState(data?.user?.name || clerkUser?.fullName || '');
-  const [email, setEmail] = useState(
-    data?.user?.email || clerkUser?.primaryEmailAddress?.emailAddress || ''
-  );
-
-  const handleUpdate = async () => {
-    try {
-      await updateUser.mutateAsync({ name, email });
-      Alert.alert('Success', 'Profile updated successfully');
-    } catch {
-      Alert.alert('Error', 'Failed to update profile');
-    }
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteUser.mutateAsync();
-              router.replace('/(auth)/sign-in');
-            } catch {
-              Alert.alert('Error', 'Failed to delete account');
-            }
-          },
+  const handleSignOut = async () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await signOut();
+          router.replace('/(auth)');
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#22D3EE" />
-      </View>
-    );
-  }
+  const name = clerkUser?.firstName 
+    ? `${clerkUser.firstName}${clerkUser.lastName ? ` ${clerkUser.lastName}` : ''}`
+    : 'User';
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <Stack.Screen options={{ title: 'Profile', headerShown: true }} />
-
-      <View style={styles.avatarContainer}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {(name || 'U').charAt(0).toUpperCase()}
+    <ScrollView 
+      style={[styles.container, { backgroundColor: theme.background }]}
+      contentContainerStyle={styles.content}
+    >
+      {/* Profile Header */}
+      <View style={styles.header}>
+        <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
+          <Text style={[styles.avatarText, { color: theme.textInverse }]}>
+            {name.charAt(0).toUpperCase()}
           </Text>
         </View>
-        <Text style={styles.avatarHint}>Tap to change photo</Text>
+        <Text style={[styles.name, { color: theme.text }]}>{name}</Text>
+        <Text style={[styles.email, { color: theme.textTertiary }]}>
+          {clerkUser?.primaryEmailAddress?.emailAddress}
+        </Text>
       </View>
 
-      <View style={styles.form}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your name"
-            placeholderTextColor="#64748B"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
+      {/* Settings */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+          Appearance
+        </Text>
+        
+        <View style={[styles.settingsCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => setMode('light')}
+          >
+            <View style={styles.settingLeft}>
+              <Ionicons name="sunny-outline" size={22} color={theme.text} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Light</Text>
+            </View>
+            {mode === 'light' && (
+              <Ionicons name="checkmark" size={20} color={theme.primary} />
+            )}
+          </TouchableOpacity>
+          
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => setMode('dark')}
+          >
+            <View style={styles.settingLeft}>
+              <Ionicons name="moon-outline" size={22} color={theme.text} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Dark</Text>
+            </View>
+            {mode === 'dark' && (
+              <Ionicons name="checkmark" size={20} color={theme.primary} />
+            )}
+          </TouchableOpacity>
+          
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => setMode('system')}
+          >
+            <View style={styles.settingLeft}>
+              <Ionicons name="phone-portrait-outline" size={22} color={theme.text} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>System</Text>
+            </View>
+            {mode === 'system' && (
+              <Ionicons name="checkmark" size={20} color={theme.primary} />
+            )}
+          </TouchableOpacity>
         </View>
+      </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={[styles.input, styles.inputDisabled]}
-            placeholder="Enter your email"
-            placeholderTextColor="#64748B"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            editable={false}
-          />
-          <Text style={styles.inputHint}>Email is managed by Clerk</Text>
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>
+          Account
+        </Text>
+        
+        <View style={[styles.settingsCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <TouchableOpacity style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="settings-outline" size={22} color={theme.text} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>
+                Preferences
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+          </TouchableOpacity>
+          
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          
+          <TouchableOpacity style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="notifications-outline" size={22} color={theme.text} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>
+                Notifications
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+          </TouchableOpacity>
+          
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+          
+          <TouchableOpacity style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="help-circle-outline" size={22} color={theme.text} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>
+                Help & Support
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.textTertiary} />
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={[styles.button, updateUser.isPending && styles.buttonDisabled]}
-          onPress={handleUpdate}
-          disabled={updateUser.isPending}
-        >
-          {updateUser.isPending ? (
-            <ActivityIndicator color="#0F172A" />
-          ) : (
-            <Text style={styles.buttonText}>Save Changes</Text>
-          )}
-        </TouchableOpacity>
       </View>
 
-      <View style={styles.dangerZone}>
-        <Text style={styles.dangerTitle}>Danger Zone</Text>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={handleDeleteAccount}
-          disabled={deleteUser.isPending}
-        >
-          {deleteUser.isPending ? (
-            <ActivityIndicator color="#EF4444" />
-          ) : (
-            <Text style={styles.deleteButtonText}>Delete Account</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      {/* Sign Out */}
+      <TouchableOpacity
+        style={[styles.signOutButton, { borderColor: theme.error }]}
+        onPress={handleSignOut}
+      >
+        <Ionicons name="log-out-outline" size={20} color={theme.error} />
+        <Text style={[styles.signOutText, { color: theme.error }]}>Sign Out</Text>
+      </TouchableOpacity>
+
+      <Text style={[styles.version, { color: theme.textTertiary }]}>
+        Robust v1.0.0
+      </Text>
     </ScrollView>
   );
 }
@@ -139,109 +169,86 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
-  contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
+  content: {
+    padding: spacing.base,
+    paddingBottom: spacing['3xl'],
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
     alignItems: 'center',
-    backgroundColor: '#0F172A',
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 32,
+    paddingVertical: spacing['2xl'],
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#22D3EE',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.base,
   },
   avatarText: {
-    fontSize: 40,
+    fontSize: typography.sizes['2xl'],
     fontWeight: '700',
-    color: '#0F172A',
   },
-  avatarHint: {
-    fontSize: 14,
-    color: '#64748B',
+  name: {
+    fontSize: typography.sizes.xl,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
   },
-  form: {
-    gap: 20,
+  email: {
+    fontSize: typography.sizes.sm,
   },
-  inputContainer: {
-    gap: 8,
+  section: {
+    marginBottom: spacing.xl,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#CBD5E1',
+  sectionTitle: {
+    fontSize: typography.sizes.xs,
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
+    marginLeft: spacing.xs,
   },
-  input: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#F8FAFC',
+  settingsCard: {
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#334155',
+    overflow: 'hidden',
   },
-  inputDisabled: {
-    opacity: 0.6,
-  },
-  inputHint: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 4,
-  },
-  button: {
-    backgroundColor: '#22D3EE',
-    borderRadius: 12,
-    padding: 16,
+  settingRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
+    justifyContent: 'space-between',
+    padding: spacing.base,
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  dangerZone: {
-    marginTop: 48,
-    padding: 20,
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EF4444',
-  },
-  dangerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#EF4444',
-    marginBottom: 16,
-  },
-  deleteButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#EF4444',
-    borderRadius: 12,
-    padding: 16,
+  settingLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
   },
-  deleteButtonText: {
-    fontSize: 16,
+  settingLabel: {
+    fontSize: typography.sizes.base,
+  },
+  divider: {
+    height: 1,
+    marginLeft: spacing.base + 22 + spacing.md,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.base,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    marginTop: spacing.lg,
+  },
+  signOutText: {
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#EF4444',
+  },
+  version: {
+    fontSize: typography.sizes.xs,
+    textAlign: 'center',
+    marginTop: spacing['2xl'],
   },
 });
-

@@ -9,49 +9,52 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useWorkout, formatDuration, calculateWorkoutStats } from '@/hooks/useWorkouts';
 import { getMuscleGroupInfo } from '@/hooks/useExercises';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius, colors } from '@/lib/theme';
 
 export default function WorkoutSummary() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { theme } = useTheme();
   const { data } = useWorkout(id);
 
   const workout = data?.workout;
 
   if (!workout) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={[styles.loadingText, { color: theme.textTertiary }]}>Loading...</Text>
       </View>
     );
   }
 
   const stats = calculateWorkoutStats(workout);
   const date = new Date(workout.startedAt);
-
-  // Calculate muscle groups hit
   const muscleGroups = new Set(workout.exercises.map(e => e.exercise.muscleGroup));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.replace('/(app)')}>
-          <Ionicons name="close" size={28} color="#F8FAFC" />
+          <Ionicons name="close" size={28} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Workout Complete</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Workout Complete</Text>
         <View style={{ width: 28 }} />
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         {/* Celebration */}
         <View style={styles.celebration}>
-          <Text style={styles.celebrationEmoji}>💪</Text>
-          <Text style={styles.celebrationTitle}>Great Work!</Text>
-          <Text style={styles.workoutName}>{workout.name}</Text>
-          <Text style={styles.workoutDate}>
+          <View style={[styles.celebrationIcon, { backgroundColor: `${theme.primary}20` }]}>
+            <Text style={styles.celebrationEmoji}>💪</Text>
+          </View>
+          <Text style={[styles.celebrationTitle, { color: theme.text }]}>Great Work!</Text>
+          <Text style={[styles.workoutName, { color: theme.primary }]}>{workout.name}</Text>
+          <Text style={[styles.workoutDate, { color: theme.textTertiary }]}>
             {date.toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
@@ -62,49 +65,49 @@ export default function WorkoutSummary() {
 
         {/* Stats */}
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Ionicons name="time-outline" size={24} color="#22D3EE" />
-            <Text style={styles.statValue}>
+          <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Ionicons name="time-outline" size={24} color={theme.primary} />
+            <Text style={[styles.statValue, { color: theme.text }]}>
               {workout.duration ? formatDuration(workout.duration) : '-'}
             </Text>
-            <Text style={styles.statLabel}>Duration</Text>
+            <Text style={[styles.statLabel, { color: theme.textTertiary }]}>Duration</Text>
           </View>
 
-          <View style={styles.statCard}>
-            <Ionicons name="layers-outline" size={24} color="#22D3EE" />
-            <Text style={styles.statValue}>{stats.completedSets}</Text>
-            <Text style={styles.statLabel}>Sets</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Ionicons name="layers-outline" size={24} color={theme.primary} />
+            <Text style={[styles.statValue, { color: theme.text }]}>{stats.completedSets}</Text>
+            <Text style={[styles.statLabel, { color: theme.textTertiary }]}>Sets</Text>
           </View>
 
-          <View style={styles.statCard}>
-            <Ionicons name="barbell-outline" size={24} color="#22D3EE" />
-            <Text style={styles.statValue}>{workout.exercises.length}</Text>
-            <Text style={styles.statLabel}>Exercises</Text>
+          <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Ionicons name="fitness-outline" size={24} color={theme.primary} />
+            <Text style={[styles.statValue, { color: theme.text }]}>{workout.exercises.length}</Text>
+            <Text style={[styles.statLabel, { color: theme.textTertiary }]}>Exercises</Text>
           </View>
 
-          <View style={styles.statCard}>
-            <Ionicons name="trending-up-outline" size={24} color="#22D3EE" />
-            <Text style={styles.statValue}>
+          <View style={[styles.statCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+            <Ionicons name="trending-up-outline" size={24} color={theme.primary} />
+            <Text style={[styles.statValue, { color: theme.text }]}>
               {stats.totalVolume > 0 ? `${(stats.totalVolume / 1000).toFixed(1)}k` : '-'}
             </Text>
-            <Text style={styles.statLabel}>Volume (lbs)</Text>
+            <Text style={[styles.statLabel, { color: theme.textTertiary }]}>Volume (lbs)</Text>
           </View>
         </View>
 
         {/* PRs */}
         {stats.prCount > 0 && (
-          <View style={styles.prSection}>
+          <View style={[styles.prSection, { backgroundColor: `${colors.gold}15`, borderColor: `${colors.gold}30` }]}>
             <View style={styles.prHeader}>
-              <Ionicons name="trophy" size={24} color="#F59E0B" />
-              <Text style={styles.prTitle}>
+              <Ionicons name="trophy" size={24} color={colors.gold} />
+              <Text style={[styles.prTitle, { color: colors.gold }]}>
                 {stats.prCount} Personal Record{stats.prCount > 1 ? 's' : ''}!
               </Text>
             </View>
             {workout.exercises.map(ex => 
               ex.sets.filter(s => s.isPR).map(set => (
-                <View key={set.id} style={styles.prItem}>
-                  <Text style={styles.prExercise}>{ex.exercise.name}</Text>
-                  <Text style={styles.prValue}>
+                <View key={set.id} style={[styles.prItem, { borderTopColor: `${colors.gold}20` }]}>
+                  <Text style={[styles.prExercise, { color: theme.text }]}>{ex.exercise.name}</Text>
+                  <Text style={[styles.prValue, { color: colors.gold }]}>
                     {set.weight} lbs × {set.reps} reps
                   </Text>
                 </View>
@@ -115,7 +118,7 @@ export default function WorkoutSummary() {
 
         {/* Muscle Groups */}
         <View style={styles.muscleSection}>
-          <Text style={styles.sectionTitle}>Muscles Worked</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Muscles Worked</Text>
           <View style={styles.muscleChips}>
             {Array.from(muscleGroups).map(group => {
               const info = getMuscleGroupInfo(group);
@@ -136,7 +139,7 @@ export default function WorkoutSummary() {
 
         {/* Exercise Breakdown */}
         <View style={styles.exerciseSection}>
-          <Text style={styles.sectionTitle}>Exercises</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>Exercises</Text>
           {workout.exercises.map(ex => {
             const completedSets = ex.sets.filter(s => s.completed);
             const bestSet = completedSets.reduce(
@@ -149,15 +152,17 @@ export default function WorkoutSummary() {
             );
 
             return (
-              <View key={ex.id} style={styles.exerciseSummary}>
+              <View key={ex.id} style={[styles.exerciseSummary, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
                 <View style={styles.exerciseSummaryHeader}>
-                  <Text style={styles.exerciseSummaryName}>{ex.exercise.name}</Text>
-                  <Text style={styles.exerciseSummarySets}>
+                  <Text style={[styles.exerciseSummaryName, { color: theme.text }]}>
+                    {ex.exercise.name}
+                  </Text>
+                  <Text style={[styles.exerciseSummarySets, { color: theme.textTertiary }]}>
                     {completedSets.length} set{completedSets.length !== 1 ? 's' : ''}
                   </Text>
                 </View>
                 {bestSet && bestSet.weight !== undefined && (
-                  <Text style={styles.exerciseBestSet}>
+                  <Text style={[styles.exerciseBestSet, { color: theme.textSecondary }]}>
                     Best: {bestSet.weight} lbs × {bestSet.reps} reps
                   </Text>
                 )}
@@ -168,12 +173,12 @@ export default function WorkoutSummary() {
       </ScrollView>
 
       {/* Done Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
         <TouchableOpacity
-          style={styles.doneButton}
+          style={[styles.doneButton, { backgroundColor: theme.primary }]}
           onPress={() => router.replace('/(app)')}
         >
-          <Text style={styles.doneButtonText}>Done</Text>
+          <Text style={[styles.doneButtonText, { color: theme.textInverse }]}>Done</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -183,10 +188,8 @@ export default function WorkoutSummary() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
   loadingText: {
-    color: '#64748B',
     textAlign: 'center',
     marginTop: 100,
   },
@@ -194,131 +197,125 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.base,
     paddingTop: 60,
-    paddingBottom: 16,
+    paddingBottom: spacing.base,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
   },
   content: {
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
+    padding: spacing.base,
     paddingBottom: 100,
   },
   celebration: {
     alignItems: 'center',
-    paddingVertical: 24,
-    marginBottom: 24,
+    paddingVertical: spacing.xl,
+    marginBottom: spacing.xl,
+  },
+  celebrationIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.base,
   },
   celebrationEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
+    fontSize: 40,
   },
   celebrationTitle: {
-    fontSize: 28,
+    fontSize: typography.sizes['2xl'],
     fontWeight: '700',
-    color: '#F8FAFC',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   workoutName: {
-    fontSize: 18,
+    fontSize: typography.sizes.lg,
     fontWeight: '600',
-    color: '#22D3EE',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   workoutDate: {
-    fontSize: 14,
-    color: '#64748B',
+    fontSize: typography.sizes.sm,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 24,
+    gap: spacing.md,
+    marginBottom: spacing.xl,
   },
   statCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: radius.lg,
+    padding: spacing.base,
     alignItems: 'center',
+    borderWidth: 1,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: typography.sizes.xl,
     fontWeight: '700',
-    color: '#F8FAFC',
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 4,
+    fontSize: typography.sizes.xs,
+    marginTop: spacing.xs,
   },
   prSection: {
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    borderRadius: radius.lg,
+    padding: spacing.base,
+    marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
   },
   prHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   prTitle: {
-    fontSize: 18,
+    fontSize: typography.sizes.md,
     fontWeight: '600',
-    color: '#F59E0B',
   },
   prItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(245, 158, 11, 0.2)',
   },
   prExercise: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '500',
-    color: '#F8FAFC',
   },
   prValue: {
-    fontSize: 14,
-    color: '#F59E0B',
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
   },
   muscleSection: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: typography.sizes.xs,
     fontWeight: '600',
-    color: '#64748B',
     letterSpacing: 1,
-    marginBottom: 12,
     textTransform: 'uppercase',
+    marginBottom: spacing.md,
   },
   muscleChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing.sm,
   },
   muscleChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
     gap: 6,
   },
   muscleDot: {
@@ -327,17 +324,17 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   muscleChipText: {
-    fontSize: 13,
+    fontSize: typography.sizes.sm,
     fontWeight: '500',
   },
   exerciseSection: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   exerciseSummary: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+    borderRadius: radius.md,
+    padding: spacing.base,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
   },
   exerciseSummaryHeader: {
     flexDirection: 'row',
@@ -345,36 +342,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   exerciseSummaryName: {
-    fontSize: 15,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
   },
   exerciseSummarySets: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: typography.sizes.sm,
   },
   exerciseBestSet: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 4,
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.xs,
   },
   footer: {
-    padding: 16,
-    paddingBottom: 32,
-    backgroundColor: '#0F172A',
+    padding: spacing.base,
+    paddingBottom: spacing['2xl'],
     borderTopWidth: 1,
-    borderTopColor: '#1E293B',
   },
   doneButton: {
-    backgroundColor: '#22D3EE',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: radius.md,
+    paddingVertical: spacing.base,
     alignItems: 'center',
   },
   doneButtonText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#0F172A',
   },
 });
-

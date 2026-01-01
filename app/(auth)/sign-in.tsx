@@ -11,15 +11,20 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SignIn() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
+  const { theme } = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = useCallback(async () => {
     if (!isLoaded) return;
@@ -37,12 +42,10 @@ export default function SignIn() {
         await setActive({ session: result.createdSessionId });
         router.replace('/(app)');
       } else {
-        console.log('Sign in result:', JSON.stringify(result, null, 2));
         setError('Sign in failed. Please try again.');
       }
     } catch (err: unknown) {
       const error = err as { errors?: Array<{ message: string }> };
-      console.error('Sign in error:', err);
       setError(error.errors?.[0]?.message || 'Sign in failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -52,21 +55,38 @@ export default function SignIn() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
     >
       <View style={styles.content}>
+        {/* Back Button */}
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
+
         <View style={styles.header}>
-          <Text style={styles.title}>Welcome back</Text>
-          <Text style={styles.subtitle}>Sign in to your account</Text>
+          <Text style={[styles.title, { color: theme.text }]}>Welcome back</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+            Sign in to continue your fitness journey
+          </Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              placeholderTextColor="#64748B"
+              style={[
+                styles.input,
+                { 
+                  backgroundColor: theme.inputBackground,
+                  borderColor: theme.inputBorder,
+                  color: theme.inputText,
+                },
+              ]}
+              placeholder="your@email.com"
+              placeholderTextColor={theme.inputPlaceholder}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -76,38 +96,70 @@ export default function SignIn() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              placeholderTextColor="#64748B"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="password"
-            />
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Password</Text>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.passwordInput,
+                  { 
+                    backgroundColor: theme.inputBackground,
+                    borderColor: theme.inputBorder,
+                    color: theme.inputText,
+                  },
+                ]}
+                placeholder="Enter your password"
+                placeholderTextColor={theme.inputPlaceholder}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoComplete="password"
+              />
+              <TouchableOpacity
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons 
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'} 
+                  size={20} 
+                  color={theme.textTertiary} 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <View style={[styles.errorContainer, { backgroundColor: `${theme.error}15` }]}>
+              <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
+            </View>
+          ) : null}
 
           <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
+            style={[
+              styles.button,
+              { backgroundColor: theme.primary },
+              isLoading && styles.buttonDisabled,
+            ]}
             onPress={handleSignIn}
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color="#0F172A" />
+              <ActivityIndicator color={theme.textInverse} />
             ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
+              <Text style={[styles.buttonText, { color: theme.textInverse }]}>
+                Sign In
+              </Text>
             )}
           </TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account?</Text>
+          <Text style={[styles.footerText, { color: theme.textTertiary }]}>
+            Don't have an account?
+          </Text>
           <Link href="/(auth)/sign-up" asChild>
             <TouchableOpacity>
-              <Text style={styles.link}>Sign Up</Text>
+              <Text style={[styles.link, { color: theme.primary }]}>Sign Up</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -119,81 +171,94 @@ export default function SignIn() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: spacing['2xl'],
+    paddingTop: 60,
     justifyContent: 'center',
   },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: spacing['2xl'],
+    zIndex: 1,
+  },
   header: {
-    marginBottom: 40,
+    marginBottom: spacing['3xl'],
   },
   title: {
-    fontSize: 32,
+    fontSize: typography.sizes['2xl'],
     fontWeight: '700',
-    color: '#F8FAFC',
-    marginBottom: 8,
+    letterSpacing: -0.5,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#94A3B8',
+    fontSize: typography.sizes.base,
   },
   form: {
-    gap: 20,
+    gap: spacing.lg,
   },
   inputContainer: {
-    gap: 8,
+    gap: spacing.sm,
   },
   label: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '500',
-    color: '#CBD5E1',
   },
   input: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#F8FAFC',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    fontSize: typography.sizes.base,
     borderWidth: 1,
-    borderColor: '#334155',
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 48,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: spacing.base,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  errorContainer: {
+    padding: spacing.md,
+    borderRadius: radius.md,
   },
   error: {
-    color: '#F87171',
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     textAlign: 'center',
   },
   button: {
-    backgroundColor: '#22D3EE',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: radius.md,
+    paddingVertical: spacing.base,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: spacing.sm,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#0F172A',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 32,
+    gap: spacing.sm,
+    marginTop: spacing['2xl'],
   },
   footerText: {
-    color: '#94A3B8',
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
   },
   link: {
-    color: '#22D3EE',
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
   },
 });
-

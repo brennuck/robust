@@ -1,20 +1,36 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/providers';
 
 export default function AppLayout() {
+  const { theme } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#0F172A' },
-        headerTintColor: '#F8FAFC',
-        headerTitleStyle: { fontWeight: '600' },
-        tabBarStyle: {
-          backgroundColor: '#0F172A',
-          borderTopColor: '#1E293B',
-          borderTopWidth: 1,
+        headerStyle: { 
+          backgroundColor: theme.background,
+          shadowColor: 'transparent',
+          elevation: 0,
         },
-        tabBarActiveTintColor: '#22D3EE',
-        tabBarInactiveTintColor: '#64748B',
+        headerTintColor: theme.text,
+        headerTitleStyle: { 
+          fontWeight: '600',
+          fontSize: 17,
+        },
+        tabBarStyle: {
+          backgroundColor: theme.tabBar,
+          borderTopColor: theme.tabBarBorder,
+          borderTopWidth: 1,
+          paddingTop: 8,
+          height: 88,
+        },
+        tabBarActiveTintColor: theme.tabActive,
+        tabBarInactiveTintColor: theme.tabInactive,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
+        },
       }}
     >
       <Tabs.Screen
@@ -22,7 +38,7 @@ export default function AppLayout() {
         options={{
           title: 'Workouts',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="barbell" size={size} color={color} />
+            <Ionicons name="fitness-outline" size={24} color={color} />
           ),
         }}
       />
@@ -31,7 +47,7 @@ export default function AppLayout() {
         options={{
           title: 'History',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time" size={size} color={color} />
+            <Ionicons name="calendar-outline" size={24} color={color} />
           ),
         }}
       />
@@ -40,7 +56,7 @@ export default function AppLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="person-outline" size={24} color={color} />
           ),
         }}
       />

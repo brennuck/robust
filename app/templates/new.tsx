@@ -12,10 +12,12 @@ import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCreateTemplate } from '@/hooks/useTemplates';
 import { useExercises, getMuscleGroupInfo } from '@/hooks/useExercises';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius } from '@/lib/theme';
 import type { Exercise } from '@/types/workout';
 
 const COLORS = [
-  '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#06B6D4',
+  '#6B8E6B', '#86A789', '#C9A962', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899',
 ];
 
 interface TemplateExercise {
@@ -26,6 +28,7 @@ interface TemplateExercise {
 
 export default function NewTemplate() {
   const router = useRouter();
+  const { theme } = useTheme();
   const createTemplate = useCreateTemplate();
   const { data: exercisesData } = useExercises();
 
@@ -84,27 +87,28 @@ export default function NewTemplate() {
 
   if (showExercisePicker) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Stack.Screen
           options={{
             title: 'Add Exercise',
-            headerStyle: { backgroundColor: '#0F172A' },
-            headerTintColor: '#F8FAFC',
+            headerStyle: { backgroundColor: theme.background },
+            headerTintColor: theme.text,
+            headerShadowVisible: false,
           }}
         />
         
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#64748B" />
+        <View style={[styles.searchContainer, { backgroundColor: theme.inputBackground }]}>
+          <Ionicons name="search" size={20} color={theme.inputPlaceholder} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.inputText }]}
             placeholder="Search exercises..."
-            placeholderTextColor="#64748B"
+            placeholderTextColor={theme.inputPlaceholder}
             value={search}
             onChangeText={setSearch}
             autoFocus
           />
           <TouchableOpacity onPress={() => setShowExercisePicker(false)}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: theme.primary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
 
@@ -116,21 +120,27 @@ export default function NewTemplate() {
             return (
               <TouchableOpacity
                 key={exercise.id}
-                style={[styles.exerciseRow, isAdded && styles.exerciseRowDisabled]}
+                style={[
+                  styles.exerciseRow, 
+                  { borderBottomColor: theme.border },
+                  isAdded && styles.exerciseRowDisabled,
+                ]}
                 onPress={() => !isAdded && handleAddExercise(exercise)}
                 disabled={isAdded}
               >
                 <View style={[styles.muscleIndicator, { backgroundColor: muscleInfo.color }]} />
                 <View style={styles.exerciseInfo}>
-                  <Text style={styles.exerciseRowName}>{exercise.name}</Text>
-                  <Text style={styles.exerciseMeta}>
+                  <Text style={[styles.exerciseRowName, { color: theme.text }]}>
+                    {exercise.name}
+                  </Text>
+                  <Text style={[styles.exerciseMeta, { color: theme.textTertiary }]}>
                     {muscleInfo.name} • {exercise.equipment}
                   </Text>
                 </View>
                 {isAdded ? (
-                  <Ionicons name="checkmark-circle" size={24} color="#22D3EE" />
+                  <Ionicons name="checkmark-circle" size={24} color={theme.primary} />
                 ) : (
-                  <Ionicons name="add-circle-outline" size={24} color="#22D3EE" />
+                  <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
                 )}
               </TouchableOpacity>
             );
@@ -141,15 +151,16 @@ export default function NewTemplate() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
           title: 'New Routine',
-          headerStyle: { backgroundColor: '#0F172A' },
-          headerTintColor: '#F8FAFC',
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.text,
+          headerShadowVisible: false,
           headerRight: () => (
             <TouchableOpacity onPress={handleSave} disabled={createTemplate.isPending}>
-              <Text style={styles.saveButton}>
+              <Text style={[styles.saveButton, { color: theme.primary }]}>
                 {createTemplate.isPending ? 'Saving...' : 'Save'}
               </Text>
             </TouchableOpacity>
@@ -160,11 +171,18 @@ export default function NewTemplate() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Name */}
         <View style={styles.section}>
-          <Text style={styles.label}>Routine Name</Text>
+          <Text style={[styles.label, { color: theme.textTertiary }]}>Routine Name</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              { 
+                backgroundColor: theme.inputBackground,
+                borderColor: theme.inputBorder,
+                color: theme.inputText,
+              },
+            ]}
             placeholder="e.g., Push Day, Leg Day"
-            placeholderTextColor="#64748B"
+            placeholderTextColor={theme.inputPlaceholder}
             value={name}
             onChangeText={setName}
           />
@@ -172,7 +190,7 @@ export default function NewTemplate() {
 
         {/* Color */}
         <View style={styles.section}>
-          <Text style={styles.label}>Color</Text>
+          <Text style={[styles.label, { color: theme.textTertiary }]}>Color</Text>
           <View style={styles.colorPicker}>
             {COLORS.map(c => (
               <TouchableOpacity
@@ -194,35 +212,40 @@ export default function NewTemplate() {
 
         {/* Exercises */}
         <View style={styles.section}>
-          <Text style={styles.label}>Exercises</Text>
+          <Text style={[styles.label, { color: theme.textTertiary }]}>Exercises</Text>
           
           {exercises.map((item, index) => {
             const muscleInfo = getMuscleGroupInfo(item.exercise.muscleGroup);
             
             return (
-              <View key={`${item.exercise.id}-${index}`} style={styles.exerciseCard}>
+              <View 
+                key={`${item.exercise.id}-${index}`} 
+                style={[styles.exerciseCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}
+              >
                 <View style={styles.exerciseCardHeader}>
                   <View style={[styles.muscleIndicator, { backgroundColor: muscleInfo.color }]} />
-                  <Text style={styles.exerciseName}>{item.exercise.name}</Text>
+                  <Text style={[styles.exerciseName, { color: theme.text }]}>
+                    {item.exercise.name}
+                  </Text>
                   <TouchableOpacity onPress={() => handleRemoveExercise(index)}>
-                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                    <Ionicons name="close-circle" size={24} color={theme.error} />
                   </TouchableOpacity>
                 </View>
                 
                 <View style={styles.setsControl}>
-                  <Text style={styles.setsLabel}>Sets:</Text>
+                  <Text style={[styles.setsLabel, { color: theme.textSecondary }]}>Sets:</Text>
                   <TouchableOpacity
-                    style={styles.setsButton}
+                    style={[styles.setsButton, { backgroundColor: theme.backgroundSecondary }]}
                     onPress={() => handleUpdateSets(index, Math.max(1, item.targetSets - 1))}
                   >
-                    <Ionicons name="remove" size={18} color="#F8FAFC" />
+                    <Ionicons name="remove" size={18} color={theme.text} />
                   </TouchableOpacity>
-                  <Text style={styles.setsValue}>{item.targetSets}</Text>
+                  <Text style={[styles.setsValue, { color: theme.text }]}>{item.targetSets}</Text>
                   <TouchableOpacity
-                    style={styles.setsButton}
+                    style={[styles.setsButton, { backgroundColor: theme.backgroundSecondary }]}
                     onPress={() => handleUpdateSets(index, Math.min(10, item.targetSets + 1))}
                   >
-                    <Ionicons name="add" size={18} color="#F8FAFC" />
+                    <Ionicons name="add" size={18} color={theme.text} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -230,11 +253,11 @@ export default function NewTemplate() {
           })}
 
           <TouchableOpacity
-            style={styles.addExerciseButton}
+            style={[styles.addExerciseButton, { backgroundColor: theme.card, borderColor: theme.border }]}
             onPress={() => setShowExercisePicker(true)}
           >
-            <Ionicons name="add-circle-outline" size={24} color="#22D3EE" />
-            <Text style={styles.addExerciseText}>Add Exercise</Text>
+            <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
+            <Text style={[styles.addExerciseText, { color: theme.primary }]}>Add Exercise</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -245,35 +268,31 @@ export default function NewTemplate() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
   content: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: spacing.base,
+    paddingBottom: spacing['2xl'],
   },
   section: {
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   label: {
-    fontSize: 14,
+    fontSize: typography.sizes.xs,
     fontWeight: '600',
-    color: '#64748B',
-    marginBottom: 8,
-    textTransform: 'uppercase',
     letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#F8FAFC',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    fontSize: typography.sizes.base,
     borderWidth: 1,
-    borderColor: '#334155',
   },
   colorPicker: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   colorOption: {
     width: 40,
@@ -284,52 +303,48 @@ const styles = StyleSheet.create({
   },
   colorSelected: {
     borderWidth: 3,
-    borderColor: '#F8FAFC',
+    borderColor: '#FFF',
   },
   exerciseCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+    borderRadius: radius.md,
+    padding: spacing.base,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
   },
   exerciseCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   muscleIndicator: {
     width: 4,
     height: 24,
     borderRadius: 2,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   exerciseName: {
     flex: 1,
-    fontSize: 15,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
   },
   setsControl: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
   setsLabel: {
-    fontSize: 14,
-    color: '#94A3B8',
+    fontSize: typography.sizes.sm,
   },
   setsButton: {
     width: 32,
     height: 32,
-    borderRadius: 8,
-    backgroundColor: '#334155',
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   setsValue: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
     minWidth: 24,
     textAlign: 'center',
   },
@@ -337,50 +352,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
+    gap: spacing.sm,
+    borderRadius: radius.md,
+    padding: spacing.base,
     borderWidth: 1,
-    borderColor: '#334155',
     borderStyle: 'dashed',
   },
   addExerciseText: {
-    fontSize: 15,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#22D3EE',
   },
   saveButton: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#22D3EE',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
-    margin: 16,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    gap: 8,
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.sm,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#F8FAFC',
+    paddingVertical: spacing.md,
+    fontSize: typography.sizes.base,
   },
   cancelText: {
-    fontSize: 14,
-    color: '#22D3EE',
+    fontSize: typography.sizes.sm,
     fontWeight: '500',
   },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   exerciseRowDisabled: {
     opacity: 0.5,
@@ -389,15 +397,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   exerciseRowName: {
-    fontSize: 15,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
     marginBottom: 2,
   },
   exerciseMeta: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: typography.sizes.sm,
     textTransform: 'capitalize',
   },
 });
-

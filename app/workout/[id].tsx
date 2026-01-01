@@ -22,6 +22,8 @@ import {
 } from '@/hooks/useWorkouts';
 import { storage } from '@/lib/storage';
 import { RestTimer } from '@/components/RestTimer';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius, colors } from '@/lib/theme';
 import type { WorkoutExercise, WorkoutSet } from '@/types/workout';
 
 function SetRow({
@@ -35,6 +37,7 @@ function SetRow({
   workoutId: string;
   onUpdate: () => void;
 }) {
+  const { theme } = useTheme();
   const updateSet = useUpdateSet();
   const deleteSet = useDeleteSet();
   
@@ -91,21 +94,34 @@ function SetRow({
   };
 
   return (
-    <View style={[styles.setRow, set.completed && styles.setCompleted]}>
+    <View style={[
+      styles.setRow, 
+      set.completed && { backgroundColor: `${theme.primary}10` }
+    ]}>
       <View style={styles.setNumber}>
-        <Text style={[styles.setNumberText, set.isWarmup && styles.warmupText]}>
+        <Text style={[
+          styles.setNumberText, 
+          { color: set.isWarmup ? colors.gold : theme.textSecondary }
+        ]}>
           {set.isWarmup ? 'W' : index + 1}
         </Text>
       </View>
 
       <View style={styles.setPrevious}>
-        <Text style={styles.previousText}>-</Text>
+        <Text style={[styles.previousText, { color: theme.textTertiary }]}>-</Text>
       </View>
 
       <TextInput
-        style={[styles.setInput, set.completed && styles.inputCompleted]}
+        style={[
+          styles.setInput, 
+          { 
+            backgroundColor: set.completed ? 'transparent' : theme.inputBackground,
+            color: set.completed ? theme.primary : theme.inputText,
+            borderColor: theme.inputBorder,
+          }
+        ]}
         placeholder="0"
-        placeholderTextColor="#475569"
+        placeholderTextColor={theme.inputPlaceholder}
         keyboardType="numeric"
         value={weight}
         onChangeText={setWeight}
@@ -113,9 +129,16 @@ function SetRow({
       />
 
       <TextInput
-        style={[styles.setInput, set.completed && styles.inputCompleted]}
+        style={[
+          styles.setInput, 
+          { 
+            backgroundColor: set.completed ? 'transparent' : theme.inputBackground,
+            color: set.completed ? theme.primary : theme.inputText,
+            borderColor: theme.inputBorder,
+          }
+        ]}
         placeholder="0"
-        placeholderTextColor="#475569"
+        placeholderTextColor={theme.inputPlaceholder}
         keyboardType="numeric"
         value={reps}
         onChangeText={setReps}
@@ -123,25 +146,28 @@ function SetRow({
       />
 
       <TouchableOpacity
-        style={[styles.checkButton, set.completed && styles.checkCompleted]}
+        style={[
+          styles.checkButton, 
+          { backgroundColor: set.completed ? theme.primary : theme.backgroundSecondary }
+        ]}
         onPress={handleComplete}
       >
         <Ionicons
           name={set.completed ? 'checkmark' : 'checkmark-outline'}
           size={20}
-          color={set.completed ? '#0F172A' : '#64748B'}
+          color={set.completed ? theme.textInverse : theme.textTertiary}
         />
       </TouchableOpacity>
 
       {set.isPR && (
         <View style={styles.prIndicator}>
-          <Ionicons name="trophy" size={14} color="#F59E0B" />
+          <Ionicons name="trophy" size={14} color={colors.gold} />
         </View>
       )}
 
       {!set.completed && (
         <TouchableOpacity style={styles.deleteSetButton} onPress={handleDelete}>
-          <Ionicons name="trash-outline" size={16} color="#EF4444" />
+          <Ionicons name="trash-outline" size={16} color={theme.error} />
         </TouchableOpacity>
       )}
     </View>
@@ -157,6 +183,7 @@ function ExerciseCard({
   workoutId: string;
   onUpdate: () => void;
 }) {
+  const { theme } = useTheme();
   const addSet = useAddSet();
 
   const handleAddSet = async () => {
@@ -169,20 +196,22 @@ function ExerciseCard({
   };
 
   return (
-    <View style={styles.exerciseCard}>
+    <View style={[styles.exerciseCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
       <View style={styles.exerciseHeader}>
-        <Text style={styles.exerciseName}>{exercise.exercise.name}</Text>
+        <Text style={[styles.exerciseName, { color: theme.primary }]}>
+          {exercise.exercise.name}
+        </Text>
         <TouchableOpacity>
-          <Ionicons name="ellipsis-horizontal" size={20} color="#64748B" />
+          <Ionicons name="ellipsis-horizontal" size={20} color={theme.textTertiary} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.setHeader}>
-        <Text style={styles.setHeaderText}>SET</Text>
-        <Text style={styles.setHeaderText}>PREV</Text>
-        <Text style={styles.setHeaderText}>LBS</Text>
-        <Text style={styles.setHeaderText}>REPS</Text>
-        <Text style={styles.setHeaderText}>✓</Text>
+        <Text style={[styles.setHeaderText, { color: theme.textTertiary }]}>SET</Text>
+        <Text style={[styles.setHeaderText, { color: theme.textTertiary }]}>PREV</Text>
+        <Text style={[styles.setHeaderText, { color: theme.textTertiary }]}>LBS</Text>
+        <Text style={[styles.setHeaderText, { color: theme.textTertiary }]}>REPS</Text>
+        <Text style={[styles.setHeaderText, { color: theme.textTertiary }]}>✓</Text>
       </View>
 
       {exercise.sets.map((set, index) => (
@@ -195,9 +224,12 @@ function ExerciseCard({
         />
       ))}
 
-      <TouchableOpacity style={styles.addSetButton} onPress={handleAddSet}>
-        <Ionicons name="add" size={18} color="#22D3EE" />
-        <Text style={styles.addSetText}>Add Set</Text>
+      <TouchableOpacity 
+        style={[styles.addSetButton, { borderColor: theme.border }]} 
+        onPress={handleAddSet}
+      >
+        <Ionicons name="add" size={18} color={theme.primary} />
+        <Text style={[styles.addSetText, { color: theme.primary }]}>Add Set</Text>
       </TouchableOpacity>
     </View>
   );
@@ -206,6 +238,7 @@ function ExerciseCard({
 export default function ActiveWorkout() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { theme } = useTheme();
   const { data, refetch } = useWorkout(id);
   const completeWorkout = useCompleteWorkout();
 
@@ -262,30 +295,33 @@ export default function ActiveWorkout() {
 
   if (!workout) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={[styles.loadingText, { color: theme.textTertiary }]}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.backgroundSecondary, borderBottomColor: theme.border }]}>
         <TouchableOpacity onPress={handleDiscard}>
-          <Ionicons name="close" size={28} color="#EF4444" />
+          <Ionicons name="close" size={28} color={theme.error} />
         </TouchableOpacity>
         
         <View style={styles.headerCenter}>
-          <Text style={styles.workoutName}>{workout.name}</Text>
-          <Text style={styles.timer}>{formatDuration(elapsedTime)}</Text>
+          <Text style={[styles.workoutName, { color: theme.text }]}>{workout.name}</Text>
+          <Text style={[styles.timer, { color: theme.primary }]}>{formatDuration(elapsedTime)}</Text>
         </View>
 
-        <TouchableOpacity style={styles.finishButton} onPress={handleFinish}>
-          <Text style={styles.finishText}>Finish</Text>
+        <TouchableOpacity 
+          style={[styles.finishButton, { backgroundColor: theme.primary }]} 
+          onPress={handleFinish}
+        >
+          <Text style={[styles.finishText, { color: theme.textInverse }]}>Finish</Text>
         </TouchableOpacity>
       </View>
 
@@ -300,11 +336,11 @@ export default function ActiveWorkout() {
         ))}
 
         <TouchableOpacity
-          style={styles.addExerciseButton}
+          style={[styles.addExerciseButton, { backgroundColor: theme.card, borderColor: theme.border }]}
           onPress={() => router.push(`/workout/${id}/add-exercise`)}
         >
-          <Ionicons name="add-circle" size={24} color="#22D3EE" />
-          <Text style={styles.addExerciseText}>Add Exercise</Text>
+          <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
+          <Text style={[styles.addExerciseText, { color: theme.primary }]}>Add Exercise</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -317,10 +353,8 @@ export default function ActiveWorkout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
   loadingText: {
-    color: '#64748B',
     textAlign: 'center',
     marginTop: 100,
   },
@@ -328,130 +362,106 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.base,
     paddingTop: 60,
-    paddingBottom: 16,
-    backgroundColor: '#1E293B',
+    paddingBottom: spacing.base,
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
   },
   headerCenter: {
     alignItems: 'center',
   },
   workoutName: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#F8FAFC',
   },
   timer: {
-    fontSize: 14,
-    color: '#22D3EE',
+    fontSize: typography.sizes.sm,
     fontVariant: ['tabular-nums'],
   },
   finishButton: {
-    backgroundColor: '#22D3EE',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
   },
   finishText: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
-    color: '#0F172A',
   },
   content: {
     flex: 1,
   },
   contentContainer: {
-    padding: 16,
+    padding: spacing.base,
     paddingBottom: 100,
   },
   exerciseCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: radius.lg,
+    padding: spacing.base,
+    marginBottom: spacing.base,
+    borderWidth: 1,
   },
   exerciseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: spacing.base,
   },
   exerciseName: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#22D3EE',
   },
   setHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
     paddingHorizontal: 4,
   },
   setHeaderText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    color: '#64748B',
     flex: 1,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
     marginBottom: 4,
-  },
-  setCompleted: {
-    backgroundColor: 'rgba(34, 211, 238, 0.1)',
   },
   setNumber: {
     width: 32,
     alignItems: 'center',
   },
   setNumberText: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
-    color: '#94A3B8',
-  },
-  warmupText: {
-    color: '#F59E0B',
   },
   setPrevious: {
     flex: 1,
     alignItems: 'center',
   },
   previousText: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: typography.sizes.sm,
   },
   setInput: {
     flex: 1,
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
     marginHorizontal: 4,
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
-    color: '#F8FAFC',
     textAlign: 'center',
-  },
-  inputCompleted: {
-    backgroundColor: 'transparent',
-    color: '#22D3EE',
+    borderWidth: 1,
   },
   checkButton: {
     width: 36,
     height: 36,
-    borderRadius: 8,
-    backgroundColor: '#334155',
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,
-  },
-  checkCompleted: {
-    backgroundColor: '#22D3EE',
   },
   prIndicator: {
     position: 'absolute',
@@ -459,41 +469,35 @@ const styles = StyleSheet.create({
     top: 8,
   },
   deleteSetButton: {
-    padding: 8,
+    padding: spacing.sm,
     marginLeft: 4,
   },
   addSetButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     gap: 6,
-    marginTop: 8,
-    borderRadius: 8,
+    marginTop: spacing.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: '#334155',
     borderStyle: 'dashed',
   },
   addSetText: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '500',
-    color: '#22D3EE',
   },
   addExerciseButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    gap: 8,
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
+    paddingVertical: spacing.base,
+    gap: spacing.sm,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#334155',
   },
   addExerciseText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#22D3EE',
   },
 });
-

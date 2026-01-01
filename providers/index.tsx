@@ -1,5 +1,6 @@
 import { AuthProvider } from './AuthProvider';
 import { QueryProvider } from './QueryProvider';
+import { ThemeProvider } from './ThemeProvider';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -7,9 +8,12 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <AuthProvider>
-      <QueryProvider>{children}</QueryProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <QueryProvider>{children}</QueryProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
+export { useTheme } from './ThemeProvider';

@@ -8,15 +8,20 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useSignUp } from '@clerk/clerk-expo';
 import { useSyncUser } from '@/hooks/useUser';
+import { useTheme } from '@/providers';
+import { typography, spacing, radius } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SignUp() {
   const { signUp, setActive, isLoaded } = useSignUp();
   const router = useRouter();
   const syncUser = useSyncUser();
+  const { theme } = useTheme();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,6 +30,7 @@ export default function SignUp() {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignUp = useCallback(async () => {
     if (!isLoaded) return;
@@ -40,12 +46,10 @@ export default function SignUp() {
         lastName: name.split(' ').slice(1).join(' ') || undefined,
       });
 
-      // Send email verification code
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: unknown) {
       const error = err as { errors?: Array<{ message: string }> };
-      console.error('Sign up error:', err);
       setError(error.errors?.[0]?.message || 'Sign up failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -59,24 +63,17 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code,
-      });
+      const result = await signUp.attemptEmailAddressVerification({ code });
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-
-        // Sync user with backend
         syncUser.mutate({ email, name });
-
         router.replace('/(app)');
       } else {
-        console.log('Verification result:', JSON.stringify(result, null, 2));
         setError('Verification failed. Please try again.');
       }
     } catch (err: unknown) {
       const error = err as { errors?: Array<{ message: string }> };
-      console.error('Verification error:', err);
       setError(error.errors?.[0]?.message || 'Verification failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -87,38 +84,72 @@ export default function SignUp() {
     return (
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={[styles.container, { backgroundColor: theme.background }]}
       >
         <View style={styles.content}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setPendingVerification(false)}
+          >
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
+          </TouchableOpacity>
+
           <View style={styles.header}>
-            <Text style={styles.title}>Verify email</Text>
-            <Text style={styles.subtitle}>Enter the code sent to {email}</Text>
+            <View style={[styles.iconContainer, { backgroundColor: `${theme.primary}20` }]}>
+              <Ionicons name="mail-outline" size={32} color={theme.primary} />
+            </View>
+            <Text style={[styles.title, { color: theme.text }]}>Check your email</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+              We sent a verification code to{'\n'}
+              <Text style={{ fontWeight: '600' }}>{email}</Text>
+            </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Verification Code</Text>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                Verification Code
+              </Text>
               <TextInput
-                style={styles.input}
-                placeholder="Enter verification code"
-                placeholderTextColor="#64748B"
+                style={[
+                  styles.input,
+                  styles.codeInput,
+                  { 
+                    backgroundColor: theme.inputBackground,
+                    borderColor: theme.inputBorder,
+                    color: theme.inputText,
+                  },
+                ]}
+                placeholder="000000"
+                placeholderTextColor={theme.inputPlaceholder}
                 value={code}
                 onChangeText={setCode}
                 keyboardType="number-pad"
+                maxLength={6}
               />
             </View>
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {error ? (
+              <View style={[styles.errorContainer, { backgroundColor: `${theme.error}15` }]}>
+                <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
+              </View>
+            ) : null}
 
             <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                { backgroundColor: theme.primary },
+                isLoading && styles.buttonDisabled,
+              ]}
               onPress={handleVerify}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="#0F172A" />
+                <ActivityIndicator color={theme.textInverse} />
               ) : (
-                <Text style={styles.buttonText}>Verify Email</Text>
+                <Text style={[styles.buttonText, { color: theme.textInverse }]}>
+                  Verify Email
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -130,79 +161,139 @@ export default function SignUp() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
     >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Create account</Text>
-          <Text style={styles.subtitle}>Sign up to get started</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Full Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your name"
-              placeholderTextColor="#64748B"
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-              autoComplete="name"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              placeholderTextColor="#64748B"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoComplete="email"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Create a password"
-              placeholderTextColor="#64748B"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="new-password"
-            />
-          </View>
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleSignUp}
-            disabled={isLoading}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.content}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#0F172A" />
-            ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
-            )}
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
-        </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account?</Text>
-          <Link href="/(auth)/sign-in" asChild>
-            <TouchableOpacity>
-              <Text style={styles.link}>Sign In</Text>
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: theme.text }]}>Create account</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+              Start your fitness journey today
+            </Text>
+          </View>
+
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Full Name</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { 
+                    backgroundColor: theme.inputBackground,
+                    borderColor: theme.inputBorder,
+                    color: theme.inputText,
+                  },
+                ]}
+                placeholder="John Doe"
+                placeholderTextColor={theme.inputPlaceholder}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoComplete="name"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { 
+                    backgroundColor: theme.inputBackground,
+                    borderColor: theme.inputBorder,
+                    color: theme.inputText,
+                  },
+                ]}
+                placeholder="your@email.com"
+                placeholderTextColor={theme.inputPlaceholder}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Password</Text>
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.passwordInput,
+                    { 
+                      backgroundColor: theme.inputBackground,
+                      borderColor: theme.inputBorder,
+                      color: theme.inputText,
+                    },
+                  ]}
+                  placeholder="Create a password"
+                  placeholderTextColor={theme.inputPlaceholder}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoComplete="new-password"
+                />
+                <TouchableOpacity
+                  style={styles.passwordToggle}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons 
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'} 
+                    size={20} 
+                    color={theme.textTertiary} 
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {error ? (
+              <View style={[styles.errorContainer, { backgroundColor: `${theme.error}15` }]}>
+                <Text style={[styles.error, { color: theme.error }]}>{error}</Text>
+              </View>
+            ) : null}
+
+            <TouchableOpacity
+              style={[
+                styles.button,
+                { backgroundColor: theme.primary },
+                isLoading && styles.buttonDisabled,
+              ]}
+              onPress={handleSignUp}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={theme.textInverse} />
+              ) : (
+                <Text style={[styles.buttonText, { color: theme.textInverse }]}>
+                  Create Account
+                </Text>
+              )}
             </TouchableOpacity>
-          </Link>
+          </View>
+
+          <View style={styles.footer}>
+            <Text style={[styles.footerText, { color: theme.textTertiary }]}>
+              Already have an account?
+            </Text>
+            <Link href="/(auth)/sign-in" asChild>
+              <TouchableOpacity>
+                <Text style={[styles.link, { color: theme.primary }]}>Sign In</Text>
+              </TouchableOpacity>
+            </Link>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -210,81 +301,113 @@ export default function SignUp() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: spacing['2xl'],
+    paddingTop: 100,
+    paddingBottom: spacing['3xl'],
     justifyContent: 'center',
   },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: spacing['2xl'],
+    zIndex: 1,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
   header: {
-    marginBottom: 40,
+    marginBottom: spacing['2xl'],
   },
   title: {
-    fontSize: 32,
+    fontSize: typography.sizes['2xl'],
     fontWeight: '700',
-    color: '#F8FAFC',
-    marginBottom: 8,
+    letterSpacing: -0.5,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#94A3B8',
+    fontSize: typography.sizes.base,
+    lineHeight: 22,
   },
   form: {
-    gap: 20,
+    gap: spacing.lg,
   },
   inputContainer: {
-    gap: 8,
+    gap: spacing.sm,
   },
   label: {
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '500',
-    color: '#CBD5E1',
   },
   input: {
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#F8FAFC',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    fontSize: typography.sizes.base,
     borderWidth: 1,
-    borderColor: '#334155',
+  },
+  codeInput: {
+    textAlign: 'center',
+    fontSize: typography.sizes.xl,
+    letterSpacing: 8,
+    fontWeight: '600',
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    paddingRight: 48,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: spacing.base,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  errorContainer: {
+    padding: spacing.md,
+    borderRadius: radius.md,
   },
   error: {
-    color: '#F87171',
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     textAlign: 'center',
   },
   button: {
-    backgroundColor: '#22D3EE',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: radius.md,
+    paddingVertical: spacing.base,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: spacing.sm,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: typography.sizes.base,
     fontWeight: '600',
-    color: '#0F172A',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 32,
+    gap: spacing.sm,
+    marginTop: spacing['2xl'],
   },
   footerText: {
-    color: '#94A3B8',
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
   },
   link: {
-    color: '#22D3EE',
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     fontWeight: '600',
   },
 });
-
