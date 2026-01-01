@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFolders, useCreateFolder, useDeleteFolder } from '@/hooks/useFolders';
 import { useStartWorkout } from '@/hooks/useWorkouts';
+import { getMuscleGroupInfo } from '@/hooks/useExercises';
 import { storage } from '@/lib/storage';
 import { useTheme } from '@/providers';
 import { typography, spacing, radius } from '@/lib/theme';
@@ -77,14 +79,14 @@ function TemplateCard({
 
 function FolderSection({
   folder,
-  onStartTemplate,
+  onSelectTemplate,
   onDeleteFolder,
   theme,
   isExpanded,
   onToggle,
 }: {
   folder: RoutineFolder;
-  onStartTemplate: (id: string, name: string) => void;
+  onSelectTemplate: (template: WorkoutTemplate) => void;
   onDeleteFolder: (id: string) => void;
   theme: any;
   isExpanded: boolean;
@@ -135,7 +137,7 @@ function FolderSection({
               <TemplateCard
                 key={template.id}
                 template={template}
-                onPress={() => onStartTemplate(template.id, template.name)}
+                onPress={() => onSelectTemplate(template)}
                 theme={theme}
               />
             ))
@@ -149,6 +151,7 @@ function FolderSection({
 export default function WorkoutsHome() {
   const router = useRouter();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { data: foldersData, isLoading, refetch } = useFolders();
   const startWorkout = useStartWorkout();
   const createFolder = useCreateFolder();
@@ -160,6 +163,7 @@ export default function WorkoutsHome() {
   const [folderName, setFolderName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [previewTemplate, setPreviewTemplate] = useState<WorkoutTemplate | null>(null);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -182,7 +186,17 @@ export default function WorkoutsHome() {
     }
   };
 
-  const handleStartFromTemplate = async (templateId: string, templateName: string) => {
+  const handleShowPreview = (template: WorkoutTemplate) => {
+    setPreviewTemplate(template);
+  };
+
+  const handleStartFromTemplate = async () => {
+    if (!previewTemplate) return;
+    
+    const { id: templateId, name: templateName } = previewTemplate;
+    // Close modal immediately for instant feel
+    setPreviewTemplate(null);
+    
     try {
       const result = await startWorkout.mutateAsync({
         name: templateName,
@@ -299,7 +313,7 @@ export default function WorkoutsHome() {
                 <FolderSection
                   key={folder.id}
                   folder={folder}
-                  onStartTemplate={handleStartFromTemplate}
+                  onSelectTemplate={handleShowPreview}
                   onDeleteFolder={handleDeleteFolder}
                   theme={theme}
                   isExpanded={expandedFolders.has(folder.id)}
@@ -319,7 +333,7 @@ export default function WorkoutsHome() {
                     <TemplateCard
                       key={template.id}
                       template={template}
-                      onPress={() => handleStartFromTemplate(template.id, template.name)}
+                      onPress={() => handleShowPreview(template)}
                       theme={theme}
                     />
                   ))}
@@ -415,6 +429,116 @@ export default function WorkoutsHome() {
               >
                 <Text style={[styles.modalConfirmText, { color: theme.textInverse }]}>
                   {createFolder.isPending ? 'Creating...' : 'Create'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Template Preview Modal */}
+      <Modal
+        visible={!!previewTemplate}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPreviewTemplate(null)}
+      >
+        <View style={[styles.previewOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+          <View 
+            style={[
+              styles.previewContent, 
+              { 
+                backgroundColor: theme.background,
+                paddingBottom: insets.bottom + spacing.base,
+              }
+            ]}
+          >
+            {/* Preview Header */}
+            <View style={[styles.previewHeader, { borderBottomColor: theme.border }]}>
+              <TouchableOpacity 
+                style={styles.previewClose}
+                onPress={() => setPreviewTemplate(null)}
+              >
+                <Ionicons name="close" size={24} color={theme.text} />
+              </TouchableOpacity>
+              <View style={styles.previewHeaderCenter}>
+                <View 
+                  style={[
+                    styles.previewColorDot, 
+                    { backgroundColor: previewTemplate?.color || theme.primary }
+                  ]} 
+                />
+                <Text style={[styles.previewTitle, { color: theme.text }]} numberOfLines={1}>
+                  {previewTemplate?.name}
+                </Text>
+              </View>
+              <View style={styles.previewClose} />
+            </View>
+
+            {/* Day Label */}
+            {previewTemplate?.dayOfWeek !== undefined && (
+              <View style={[styles.previewDayBadge, { backgroundColor: `${theme.primary}15` }]}>
+                <Ionicons name="calendar-outline" size={14} color={theme.primary} />
+                <Text style={[styles.previewDayText, { color: theme.primary }]}>
+                  {getDayLabel(previewTemplate.dayOfWeek)}
+                </Text>
+              </View>
+            )}
+
+            {/* Exercise List */}
+            <ScrollView 
+              style={styles.previewExercises}
+              contentContainerStyle={styles.previewExercisesContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {previewTemplate?.exercises.length === 0 ? (
+                <View style={styles.previewEmptyState}>
+                  <Ionicons name="barbell-outline" size={48} color={theme.textTertiary} />
+                  <Text style={[styles.previewEmptyText, { color: theme.textTertiary }]}>
+                    No exercises in this routine
+                  </Text>
+                </View>
+              ) : (
+                previewTemplate?.exercises.map((ex, index) => {
+                  const muscleInfo = getMuscleGroupInfo(ex.exercise.muscleGroup);
+                  return (
+                    <View 
+                      key={ex.id} 
+                      style={[
+                        styles.previewExerciseRow, 
+                        { backgroundColor: theme.card, borderColor: theme.cardBorder }
+                      ]}
+                    >
+                      <Text style={[styles.previewExerciseOrder, { color: theme.textTertiary }]}>
+                        {index + 1}
+                      </Text>
+                      <View style={[styles.previewMuscleIndicator, { backgroundColor: muscleInfo.color }]} />
+                      <View style={styles.previewExerciseInfo}>
+                        <Text style={[styles.previewExerciseName, { color: theme.text }]}>
+                          {ex.exercise.name}
+                        </Text>
+                        <Text style={[styles.previewExerciseDetails, { color: theme.textSecondary }]}>
+                          {muscleInfo.name} • {ex.exercise.equipment}
+                        </Text>
+                        <Text style={[styles.previewExerciseMeta, { color: theme.primary }]}>
+                          {ex.targetSets} sets × {ex.targetReps} reps
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </ScrollView>
+
+            {/* Start Button */}
+            <View style={styles.previewFooter}>
+              <TouchableOpacity
+                style={[styles.startWorkoutButton, { backgroundColor: theme.primary }]}
+                onPress={handleStartFromTemplate}
+              >
+                <Ionicons name="play" size={20} color={theme.textInverse} />
+                <Text style={[styles.startWorkoutButtonText, { color: theme.textInverse }]}>
+                  Start Workout
                 </Text>
               </TouchableOpacity>
             </View>
@@ -650,5 +774,126 @@ const styles = StyleSheet.create({
   modalConfirmText: {
     fontSize: typography.sizes.base,
     fontWeight: '600',
+  },
+  // Preview Modal Styles
+  previewOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  previewContent: {
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    minHeight: '50%',
+    maxHeight: '90%',
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.base,
+    borderBottomWidth: 1,
+  },
+  previewClose: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewHeaderCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  previewColorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  previewTitle: {
+    fontSize: typography.sizes.lg,
+    fontWeight: '700',
+  },
+  previewDayBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    marginTop: spacing.md,
+  },
+  previewDayText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '600',
+  },
+  previewExercises: {
+    flex: 1,
+  },
+  previewExercisesContent: {
+    padding: spacing.base,
+    gap: spacing.sm,
+  },
+  previewEmptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing['3xl'],
+  },
+  previewEmptyText: {
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.md,
+  },
+  previewExerciseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.base,
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  previewMuscleIndicator: {
+    width: 4,
+    height: 36,
+    borderRadius: 2,
+    marginRight: spacing.md,
+  },
+  previewExerciseInfo: {
+    flex: 1,
+  },
+  previewExerciseName: {
+    fontSize: typography.sizes.base,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  previewExerciseDetails: {
+    fontSize: typography.sizes.sm,
+    marginBottom: 2,
+    textTransform: 'capitalize',
+  },
+  previewExerciseMeta: {
+    fontSize: typography.sizes.sm,
+    fontWeight: '600',
+  },
+  previewExerciseOrder: {
+    fontSize: typography.sizes.base,
+    fontWeight: '700',
+    width: 28,
+    textAlign: 'center',
+  },
+  previewFooter: {
+    padding: spacing.base,
+    paddingTop: 0,
+  },
+  startWorkoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.base,
+  },
+  startWorkoutButtonText: {
+    fontSize: typography.sizes.base,
+    fontWeight: '700',
   },
 });
